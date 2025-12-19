@@ -28,13 +28,82 @@ export interface SubjectConfig {
     color: string;
 }
 
-export const DEFAULT_SUBJECT_CONFIG: SubjectConfig[] = [
-    { id: 'azDili', name: 'Azərbaycan dili', length: 20, points: 5, color: 'bg-blue-100 text-blue-900' },
-    { id: 'riyaziyyat', name: 'Riyaziyyat', length: 20, points: 5, color: 'bg-red-100 text-red-900' },
-    { id: 'heyatBilgisi', name: 'Həyat Bilgisi', length: 10, points: 5, color: 'bg-green-100 text-green-900' },
-    { id: 'mentiq', name: 'Məntiq', length: 10, points: 5, color: 'bg-purple-100 text-purple-900' },
-    { id: 'xariciDil', name: 'Xarici Dil', length: 10, points: 5, color: 'bg-orange-100 text-orange-900' },
-];
+// Reusable definitions for subjects
+const SUB_AZ = { id: 'azDili', name: 'Azərbaycan dili', color: 'bg-blue-100 text-blue-900' };
+const SUB_MATH = { id: 'riyaziyyat', name: 'Riyaziyyat', color: 'bg-red-100 text-red-900' };
+const SUB_LIFE = { id: 'heyatBilgisi', name: 'Həyat Bilgisi', color: 'bg-green-100 text-green-900' };
+const SUB_LOGIC = { id: 'mentiq', name: 'Məntiq', color: 'bg-purple-100 text-purple-900' };
+const SUB_ENG = { id: 'xariciDil', name: 'Xarici Dil', color: 'bg-orange-100 text-orange-900' };
+const SUB_HIST = { id: 'tarix', name: 'Tarix', color: 'bg-yellow-100 text-yellow-900' };
+const SUB_GEO = { id: 'cografiya', name: 'Coğrafiya', color: 'bg-cyan-100 text-cyan-900' };
+const SUB_PHYS = { id: 'fizika', name: 'Fizika', color: 'bg-slate-200 text-slate-900' };
+const SUB_CHEM = { id: 'kimya', name: 'Kimya', color: 'bg-pink-100 text-pink-900' };
+const SUB_BIO = { id: 'bialogiya', name: 'Bialogiya', color: 'bg-lime-100 text-lime-900' };
+
+export const CLASS_CONFIGS: Record<string, SubjectConfig[]> = {
+    // 1ci sinif
+    '01': [
+        { ...SUB_AZ, length: 15, points: 12 },
+        { ...SUB_MATH, length: 15, points: 12 },
+        { ...SUB_LIFE, length: 10, points: 12 },
+        { ...SUB_LOGIC, length: 10, points: 10 },
+        { ...SUB_ENG, length: 10, points: 12 },
+    ],
+    // 2-4cu sinif (Same structure)
+    '02': [
+        { ...SUB_AZ, length: 20, points: 10 },
+        { ...SUB_MATH, length: 20, points: 10 },
+        { ...SUB_LIFE, length: 10, points: 10 },
+        { ...SUB_LOGIC, length: 10, points: 10 },
+        { ...SUB_ENG, length: 10, points: 10 },
+    ],
+    // 5ci sinif
+    '05': [
+        { ...SUB_AZ, length: 20, points: 10 },
+        { ...SUB_MATH, length: 20, points: 10 },
+        { ...SUB_LOGIC, length: 10, points: 10 },
+        { ...SUB_HIST, length: 10, points: 10 },
+        { ...SUB_ENG, length: 10, points: 10 },
+    ],
+    // 6ci sinif
+    '06': [
+        { ...SUB_AZ, length: 20, points: 9 },
+        { ...SUB_MATH, length: 20, points: 9 },
+        { ...SUB_LOGIC, length: 10, points: 7 },
+        { ...SUB_HIST, length: 10, points: 9 },
+        { ...SUB_GEO, length: 10, points: 9 },
+        { ...SUB_ENG, length: 10, points: 9 },
+    ],
+    // 7-8ci sinif (Same structure)
+    '07': [
+        { ...SUB_AZ, length: 20, points: 7 },
+        { ...SUB_MATH, length: 20, points: 7 },
+        { ...SUB_PHYS, length: 10, points: 7 },
+        { ...SUB_CHEM, length: 10, points: 7 },
+        { ...SUB_BIO, length: 10, points: 7 },
+        { ...SUB_HIST, length: 10, points: 7 },
+        { ...SUB_GEO, length: 10, points: 7 },
+        { ...SUB_ENG, length: 10, points: 7 },
+    ],
+};
+
+// Copy references for '03', '04', '08' 
+CLASS_CONFIGS['03'] = CLASS_CONFIGS['02']; // Same as 2
+CLASS_CONFIGS['04'] = CLASS_CONFIGS['02']; // Same as 2 (also 4)
+CLASS_CONFIGS['08'] = CLASS_CONFIGS['07']; // Same as 7
+
+// Also support single digit '1' for robustness if needed, 
+// though the parser produces '01'.
+CLASS_CONFIGS['1'] = CLASS_CONFIGS['01'];
+CLASS_CONFIGS['2'] = CLASS_CONFIGS['02'];
+CLASS_CONFIGS['3'] = CLASS_CONFIGS['03'];
+CLASS_CONFIGS['4'] = CLASS_CONFIGS['04'];
+CLASS_CONFIGS['5'] = CLASS_CONFIGS['05'];
+CLASS_CONFIGS['6'] = CLASS_CONFIGS['06'];
+CLASS_CONFIGS['7'] = CLASS_CONFIGS['07'];
+CLASS_CONFIGS['8'] = CLASS_CONFIGS['08'];
+
+export const DEFAULT_SUBJECT_CONFIG: SubjectConfig[] = CLASS_CONFIGS['02']; // Default to Grade 2 config as a fallback
 
 export const parseOMRData = (rawText: string, configMap: Record<string, SubjectConfig[]> = { 'default': DEFAULT_SUBJECT_CONFIG }): ParsedStudent[] => {
   // 1. Clean the text: remove '`' noise
@@ -87,7 +156,7 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
       // 12. Qrup: 59-59 (58-59)
       const qrup = line.slice(58, 59).trim();
 
-      // Answer string starts at 59
+      // Answer string starts at 59 (Index verification confirmed)
       let answerString = line.slice(59);
       
       if (answerString.length < 70) {

@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Upload, Trash2, Download, AlertTriangle, FileText, CheckCircle2, Key, Search, Settings, Plus, X, GripVertical, Copy } from 'lucide-react';
-import { parseOMRData, ParsedStudent, SubjectConfig, DEFAULT_SUBJECT_CONFIG } from '@/lib/omr-parser';
+import { parseOMRData, ParsedStudent, SubjectConfig, DEFAULT_SUBJECT_CONFIG, CLASS_CONFIGS } from '@/lib/omr-parser';
 import { gradeStudent, GradedStudent, SubjectScore } from '@/lib/grading';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -238,11 +238,13 @@ export default function OMRDashboard() {
   
   // Dynamic Subject Configuration
   // Map of Class Name -> Config
+  // Pre-load all known class configurations
   const [configMap, setConfigMap] = useState<Record<string, SubjectConfig[]>>({
-      'default': DEFAULT_SUBJECT_CONFIG
+      'default': DEFAULT_SUBJECT_CONFIG,
+      ...CLASS_CONFIGS
   });
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [configActiveTab, setConfigActiveTab] = useState<string>('default');
+  const [configActiveTab, setConfigActiveTab] = useState<string>('01');
 
   // Detected needed keys from parsed data: Map of Class -> Array of Variants
   const [neededKeys, setNeededKeys] = useState<Record<string, string[]>>({});
@@ -592,7 +594,7 @@ export default function OMRDashboard() {
                         <div className="w-64 bg-slate-50 border-r border-slate-200 p-4 overflow-y-auto">
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 block">Siniflər</label>
-                                {Object.keys(configMap).sort().map(cls => (
+                                {Object.keys(neededKeys).sort((a, b) => Number(a) - Number(b)).map(cls => (
                                     <button
                                         key={cls}
                                         onClick={() => setConfigActiveTab(cls)}
@@ -950,12 +952,40 @@ export default function OMRDashboard() {
                                         <span className="font-mono text-sm font-medium text-slate-700">
                                           {score ? score.netScore.toFixed(2) : '-'}
                                         </span>
-                                        {score && (
-                                          <span className="text-[10px] text-slate-400 whitespace-nowrap">
-                                            <span className="text-green-600 font-medium">{score.correct} D</span>
-                                            <span className="mx-1">/</span>
-                                            <span className="text-red-500 font-medium">{score.incorrect} S</span>
-                                          </span>
+                                        {score && score.studentAnswerString && (
+                                          <div className="flex flex-col mt-1 select-none">
+                                            {/* Student Row */}
+                                            <div className="flex font-mono text-[10px] leading-tight tracking-wider">
+                                              {score.studentAnswerString.split('').map((char, i) => {
+                                                const keyChar = score.correctAnswerString[i] || ' ';
+                                                let color = 'text-slate-300'; // Default/Empty
+                                                
+                                                if (keyChar === '*') {
+                                                    color = 'text-green-600 font-bold'; // Wildcard correct
+                                                } else if (char === ' ') {
+                                                    color = 'text-slate-300';
+                                                } else if (char === keyChar) {
+                                                    color = 'text-green-600 font-bold';
+                                                } else {
+                                                    color = 'text-red-500 font-bold';
+                                                }
+                                                
+                                                return (
+                                                  <span key={i} className={cn("w-[10px] text-center", color)}>
+                                                    {char}
+                                                  </span>
+                                                );
+                                              })}
+                                            </div>
+                                            {/* Key Row - Only show if different? No, user asked for it below. */}
+                                            <div className="flex font-mono text-[8px] leading-tight tracking-wider opacity-60 mt-[1px]">
+                                              {score.correctAnswerString.split('').map((char, i) => (
+                                                <span key={i} className="w-[10px] text-center text-slate-500">
+                                                  {char}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          </div>
                                         )}
                                       </div>
                                     </td>

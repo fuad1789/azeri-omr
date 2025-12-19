@@ -6,6 +6,8 @@ export interface SubjectScore {
   incorrect: number;
   unanswered: number;
   netScore: number;
+  studentAnswerString: string;
+  correctAnswerString: string;
 }
 
 export interface GradedStudent extends ParsedStudent {
@@ -36,11 +38,17 @@ export const gradeStudent = (student: ParsedStudent, answerKey: string, config: 
       let incorrect = 0;
       let unanswered = 0;
 
+      // Slice the comparison strings for this subject
+      const subStudentAns = studentAns.slice(start, start + length);
+      const subKeyAns = key.slice(start, start + length);
+
       for (let i = start; i < start + length; i++) {
           const sChar = studentAns[i] || ' ';
           const kChar = key[i] || ' ';
 
-          if (sChar === ' ' || sChar === '*') { 
+          if (kChar === '*') {
+              correct++;
+          } else if (sChar === ' ' || sChar === '*') { 
                unanswered++;
           } else if (sChar === kChar) {
               correct++;
@@ -55,9 +63,17 @@ export const gradeStudent = (student: ParsedStudent, answerKey: string, config: 
       const weightedNetScore = correct * pointsPerQuestion;
       
       // We store the WEIGHTED score as the netScore
-      scores[subject.id] = { correct, incorrect, unanswered, netScore: weightedNetScore };
+      scores[subject.id] = { 
+          correct, 
+          incorrect, 
+          unanswered, 
+          netScore: weightedNetScore,
+          studentAnswerString: subStudentAns,
+          correctAnswerString: subKeyAns
+      };
       totalNetScore += weightedNetScore;
       
+      currentIndex += length;
   }
 
   return {
