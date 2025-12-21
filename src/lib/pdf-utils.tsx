@@ -79,13 +79,15 @@ export async function generateCombinedPDF(
     }));
 
   // Generate combined PDF
-  const CombinedExamResultPDF = (await import('./pdf-combined')).CombinedExamResultPDF;
-  const doc = React.createElement(CombinedExamResultPDF, {
-    students: studentData,
-    examName: options.examName,
-    examDate: options.examDate,
-    totalStudents: totalStudents,
-  });
+  const { CombinedExamResultPDF } = await import('./pdf-combined');
+  const doc = (
+    <CombinedExamResultPDF
+      students={studentData}
+      examName={options.examName}
+      examDate={options.examDate}
+      totalStudents={totalStudents}
+    />
+  );
 
   const asPdf = pdf(doc);
   const blob = await asPdf.toBlob();
