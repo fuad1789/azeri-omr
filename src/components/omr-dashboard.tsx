@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Upload, Trash2, Download, AlertTriangle, CheckCircle2, Key, Search, Settings, Plus, X, GripVertical, FileText, Loader2 } from 'lucide-react';
+import { Upload, Trash2, Download, AlertTriangle, CheckCircle2, Key, Search, Settings, Plus, X, GripVertical, FileText, Loader2, FileDown } from 'lucide-react';
 import { ParsedStudent, SubjectConfig, DEFAULT_SUBJECT_CONFIG, CLASS_CONFIGS } from '@/lib/omr-parser';
 import { GradedStudent, SubjectScore } from '@/lib/grading';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { generateCombinedPDF, downloadCombinedPDF, downloadPDF } from '@/lib/pdf-utils';
 
 
 // dnd-kit imports
@@ -220,7 +221,18 @@ const TableRow = React.memo(({ item, configMap, allUniqueSubjects }: { item: Gra
       <tr className="hover:bg-slate-50 transition-colors">
         <td className="px-3 py-3 font-mono font-medium text-slate-600 text-xs w-[80px]">{item.isNomresi}</td>
         <td className="px-3 py-3 font-medium text-slate-900 whitespace-nowrap text-xs w-[200px]">
-          {item.ad} {item.soyad}
+          <div className="flex items-center gap-2">
+            <span>{item.ad} {item.soyad}</span>
+            {item.scores && (
+              <button
+                onClick={() => handleGenerateSinglePDF(item)}
+                className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 p-1 rounded transition-colors"
+                title="PDF yüklə"
+              >
+                <FileDown className="w-3 h-3" />
+              </button>
+            )}
+          </div>
         </td>
         <td className="px-2 py-3 text-slate-500 whitespace-nowrap text-xs w-[150px]">
           {item.sinif}{item.sinfinAdi} <span className="text-slate-300">/</span> {item.bolme}
@@ -298,6 +310,11 @@ export default function OMRDashboard() {
 
   const [neededKeys, setNeededKeys] = useState<Record<string, string[]>>({});
   const [activeClass, setActiveClass] = useState<string>('');
+  
+  const [examName, setExamName] = useState<string>('');
+  const [examDate, setExamDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [isGeneratingPDFs, setIsGeneratingPDFs] = useState(false);
+  const [includeRank, setIncludeRank] = useState(true);
 
   const [answerKeys, setAnswerKeys] = useState<Record<string, Record<string, string>>>(() => {
     const initial: Record<string, Record<string, string>> = {};
@@ -475,6 +492,98 @@ export default function OMRDashboard() {
     downloadAnchorNode.remove();
   };
 
+  const handleGenerateAllPDFs = async () => {
+    if (!gradedData || !examName.trim()) {
+      alert('Zəhmət olmasa imtahan adını daxil edin.');
+      return;
+    }
+
+    setIsGeneratingPDFs(true);
+    try {
+      const validStudents = gradedData.filter(d => d.isValid && d.scores);
+      if (validStudents.length === 0) {
+        alert('PDF yaratmaq üçün etibarlı tələbə məlumatı yoxdur.');
+        setIsGeneratingPDFs(false);
+        return;
+      }
+
+      const combinedBlob = await generateCombinedPDF(validStudents, configMap, {
+        examName: examName.trim(),
+        examDate: examDate,
+        includeRank: includeRank,
+      });
+
+      await downloadCombinedPDF(combinedBlob, examName.trim());
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('PDF yaratma zamanı xəta baş verdi: ' + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setIsGeneratingPDFs(false);
+    }
+  };
+
+  const handleGenerateSinglePDF = async (student: GradedStudent) => {
+    if (!examName.trim()) {
+      alert('Zəhmət olmasa imtahan adını daxil edin.');
+      return;
+    }
+
+    if (!student.scores) {
+      alert('Bu tələbə üçün nəticə yoxdur.');
+      return;
+    }
+
+    try {
+      const config = configMap[student.sinif] || configMap['default'] || [];
+      
+      // Calculate rank if needed
+      let rank: number | undefined;
+      if (includeRank && gradedData) {
+        const studentsWithScores = gradedData
+          .filter(s => s.isValid && s.scores)
+          .map(s => ({
+            id: s.id,
+            score: s.scores!.totalNetScore,
+          }))
+          .sort((a, b) => b.score - a.score);
+
+        const rankIndex = studentsWithScores.findIndex(s => s.id === student.id);
+        if (rankIndex !== -1) {
+          let currentRank = 1;
+          let previousScore = Infinity;
+          for (let i = 0; i <= rankIndex; i++) {
+            if (studentsWithScores[i].score < previousScore) {
+              currentRank = i + 1;
+              previousScore = studentsWithScores[i].score;
+            }
+          }
+          rank = currentRank;
+        }
+      }
+
+      const blob = await (await import('@/lib/pdf-utils')).generateStudentPDF(
+        student,
+        config,
+        {
+          examName: examName.trim(),
+          examDate: examDate,
+          includeRank: includeRank,
+        },
+        rank,
+        gradedData?.filter(s => s.isValid && s.scores).length
+      );
+
+      const filename = `${student.isNomresi}_${student.ad}_${student.soyad}_nəticə.pdf`
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_]/g, '');
+      
+      downloadPDF(blob, filename);
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('PDF yaratma zamanı xəta baş verdi: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
 
 
 
@@ -615,9 +724,24 @@ export default function OMRDashboard() {
           <div className="flex gap-3">
              {showResults && gradedData && (
                <>
-
-
                  <button 
+                  onClick={handleGenerateAllPDFs}
+                  disabled={isGeneratingPDFs || !examName.trim()}
+                  className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+                >
+                  {isGeneratingPDFs ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      PDF yaradılır...
+                    </>
+                  ) : (
+                    <>
+                      <FileDown className="w-4 h-4" />
+                      Birləşdirilmiş PDF Yüklə
+                    </>
+                  )}
+                </button>
+                <button 
                   onClick={handleDownloadJSON}
                   className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
                 >
@@ -770,6 +894,50 @@ export default function OMRDashboard() {
         {/* Layout */}
         <div className="flex flex-col gap-8">
           
+          {/* Exam Info Section */}
+          {showResults && gradedData && (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
+                      İmtahan Adı *
+                    </label>
+                    <input
+                      type="text"
+                      value={examName}
+                      onChange={(e) => setExamName(e.target.value)}
+                      placeholder="Məs: 14DEKB25_BILIK_YAR1_S3"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
+                      Tarix
+                    </label>
+                    <input
+                      type="date"
+                      value={examDate}
+                      onChange={(e) => setExamDate(e.target.value)}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 pt-6 md:pt-0">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={includeRank}
+                      onChange={(e) => setIncludeRank(e.target.checked)}
+                      className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                    />
+                    <span className="text-sm text-slate-700 font-medium">Yer göstər</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Top Section: controls */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 w-full">
             
