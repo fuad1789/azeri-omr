@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { pdf } from '@react-pdf/renderer';
+// import { pdf } from '@react-pdf/renderer'; // Removed for lazy loading
 import { ExamResultPDF } from './pdf-generator';
 import { GradedStudent } from './grading';
 import { SubjectConfig } from './omr-parser';
@@ -33,6 +33,7 @@ export async function generateStudentPDF(
     />
   );
 
+  const { pdf } = await import('@react-pdf/renderer');
   const asPdf = pdf(doc);
   const blob = await asPdf.toBlob();
   return blob;
@@ -89,6 +90,7 @@ export async function generateCombinedPDF(
     />
   );
 
+  const { pdf } = await import('@react-pdf/renderer');
   const asPdf = pdf(doc);
   const blob = await asPdf.toBlob();
   return blob;
