@@ -35,7 +35,7 @@ Font.register({
 const PAGE_PADDING = 14;
 const HEADER_HEIGHT = 50;
 const FOOTER_HEIGHT = 30;
-const TABLE_HEIGHT = 110; // Increased height for summary table to make it more prominent
+const TABLE_HEIGHT = 130; // Increased height for summary table to make it more prominent
 const CONTENT_GAP = 10;
 
 // Calculate available content height
@@ -62,47 +62,35 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   header: {
+    marginBottom: 10,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#000000",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  headerInfoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    height: HEADER_HEIGHT,
-    paddingBottom: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: "#E5E7EB",
-    marginBottom: CONTENT_GAP,
-  },
-  logoSection: {
-    flexDirection: "column",
-    width: "32%",
-  },
-  logoText: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: "#1E293B",
-  },
-  titleSection: {
-    flexDirection: "column",
     alignItems: "center",
-    flex: 1,
+    paddingVertical: 4,
+    paddingHorizontal: 2, // Slight padding
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+    borderRadius: 4,
+    padding: 4,
   },
-  mainTitle: {
-    fontSize: 22,
+  headerTextLabel: {
+    fontSize: 10,
     fontWeight: "bold",
     color: "#1E293B",
   },
-  dateSection: {
-    flexDirection: "column",
-    alignItems: "flex-end",
-    width: "28%",
-  },
-  dateLabel: {
-    fontSize: 8,
-    color: "#64748B",
-  },
-  dateValue: {
-    fontSize: 9,
-    fontWeight: "bold",
-    color: "#1E293B",
+  headerTextValue: {
+    fontSize: 10,
+    color: "#475569",
   },
   contentRow: {
     flexDirection: "row",
@@ -110,7 +98,7 @@ const styles = StyleSheet.create({
     minHeight: 0, // Allow flex shrinking
   },
   leftColumn: {
-    width: "36%",
+    width: "20%",
     flexDirection: "column",
     paddingRight: 10,
     minHeight: 0,
@@ -120,16 +108,19 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     minHeight: 0,
     flex: 1,
+    alignItems: "flex-end",
   },
   subjectsContainer: {
     flexDirection: "row",
     flex: 1,
     minHeight: 0,
+    width: "90%",
+    marginLeft: "auto",
   },
   subjectsColumn: {
     flex: 1,
     flexDirection: "column",
-    paddingRight: 6,
+    paddingLeft: 60,
     minHeight: 0,
   },
   infoBox: {
@@ -155,7 +146,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEF2FF",
     padding: 10,
     borderRadius: 5,
-    borderWidth: 2,
+    borderWidth: 4,
     borderColor: "#6366F1",
     alignItems: "center",
     marginRight: 7,
@@ -206,7 +197,7 @@ const styles = StyleSheet.create({
     color: "#1E293B",
     marginBottom: 3,
     paddingBottom: 2,
-    borderBottomWidth: 1,
+    borderBottomWidth: 2,
     borderBottomColor: "#E2E8F0",
   },
   answerRow: {
@@ -255,10 +246,11 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#F1F5F9",
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: 4,
-    borderBottomWidth: 2,
+    borderBottomWidth: 4,
     borderBottomColor: "#CBD5E1",
+    alignItems: "center",
   },
   tableHeaderText: {
     fontSize: 11,
@@ -269,13 +261,13 @@ const styles = StyleSheet.create({
   },
   tableRow: {
     flexDirection: "row",
-    paddingVertical: 5,
+    paddingVertical: 7,
     paddingHorizontal: 4,
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
   },
   tableCell: {
-    fontSize: 10,
+    fontSize: 13,
     color: "#1E293B",
     textAlign: "center",
     flex: 1,
@@ -296,6 +288,11 @@ const styles = StyleSheet.create({
     color: "#64748B",
     textAlign: "center",
     marginTop: CONTENT_GAP,
+  },
+  verticalDivider: {
+    borderRightWidth: 1,
+    borderRightColor: "#94A3B8",
+    borderRightStyle: "dashed",
   },
 });
 
@@ -461,15 +458,20 @@ export const CombinedExamResultPDF: React.FC<CombinedPDFProps> = ({
         <View style={styles.container} wrap={false}>
           {/* Header */}
           <View style={styles.header} wrap={false}>
-            <View style={styles.logoSection}>
-              <Text style={styles.logoText}>Azari HAZIRLIQ KURSLARI</Text>
-            </View>
-            <View style={styles.titleSection}>
-              <Text style={styles.mainTitle}>İmtahan nəticə vərəqi</Text>
-            </View>
-            <View style={styles.dateSection}>
-              <Text style={styles.dateLabel}>Tarix:</Text>
-              <Text style={styles.dateValue}>{formatDate(examDate)}</Text>
+            <Text style={styles.headerTitle}>İmtahan nəticə vərəqi</Text>
+            <View style={styles.headerInfoRow}>
+              <View style={{ flexDirection: "row" }}>
+                <Text style={styles.headerTextLabel}>İmtahan: </Text>
+                <Text style={styles.headerTextValue}>
+                  {examName || "Sınaq İmtahanı"}
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row" }}>
+                <Text style={styles.headerTextLabel}>Tarix: </Text>
+                <Text style={styles.headerTextValue}>
+                  {formatDate(examDate)}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -505,12 +507,7 @@ export const CombinedExamResultPDF: React.FC<CombinedPDFProps> = ({
                   <Text style={styles.scoreLabel}>BAL</Text>
                   <Text style={styles.scoreValue}>{totalScore.toFixed(0)}</Text>
                 </View>
-                {rank !== undefined && (
-                  <View style={[styles.rankBox, { flex: 1 }]} wrap={false}>
-                    <Text style={styles.rankLabel}>YER</Text>
-                    <Text style={styles.rankValue}>{rank}</Text>
-                  </View>
-                )}
+                {/* Note: Rank is intentionally removed here as per user design in single PDF */}
               </View>
             </View>
 
@@ -534,9 +531,14 @@ export const CombinedExamResultPDF: React.FC<CombinedPDFProps> = ({
           {/* Summary Table */}
           <View style={styles.summaryTable} wrap={false}>
             <View style={styles.tableHeader} wrap={false}>
-              <Text style={styles.tableHeaderText}>Kateqoriya</Text>
+              <Text style={[styles.tableHeaderText, styles.verticalDivider]}>
+                Kateqoriya
+              </Text>
               {config.map((subj) => (
-                <Text key={subj.id} style={styles.tableHeaderText}>
+                <Text
+                  key={subj.id}
+                  style={[styles.tableHeaderText, styles.verticalDivider]}
+                >
                   {subj.name.slice(0, 8)}
                 </Text>
               ))}
@@ -544,9 +546,14 @@ export const CombinedExamResultPDF: React.FC<CombinedPDFProps> = ({
             </View>
 
             <View style={styles.tableRow} wrap={false}>
-              <Text style={styles.tableCellBold}>Sual sayı</Text>
+              <Text style={[styles.tableCellBold, styles.verticalDivider]}>
+                Sual sayı
+              </Text>
               {config.map((subj) => (
-                <Text key={subj.id} style={styles.tableCell}>
+                <Text
+                  key={subj.id}
+                  style={[styles.tableCell, styles.verticalDivider]}
+                >
                   {subj.length}
                 </Text>
               ))}
@@ -554,13 +561,18 @@ export const CombinedExamResultPDF: React.FC<CombinedPDFProps> = ({
             </View>
 
             <View style={styles.tableRow} wrap={false}>
-              <Text style={styles.tableCellBold}>DOĞRU</Text>
+              <Text style={[styles.tableCellBold, styles.verticalDivider]}>
+                DOĞRU
+              </Text>
               {config.map((subj) => {
                 const score = student.scores?.[subj.id] as
                   | SubjectScore
                   | undefined;
                 return (
-                  <Text key={subj.id} style={styles.tableCell}>
+                  <Text
+                    key={subj.id}
+                    style={[styles.tableCell, styles.verticalDivider]}
+                  >
                     {score?.correct || 0}
                   </Text>
                 );
@@ -569,13 +581,18 @@ export const CombinedExamResultPDF: React.FC<CombinedPDFProps> = ({
             </View>
 
             <View style={styles.tableRow} wrap={false}>
-              <Text style={styles.tableCellBold}>SƏHV</Text>
+              <Text style={[styles.tableCellBold, styles.verticalDivider]}>
+                SƏHV
+              </Text>
               {config.map((subj) => {
                 const score = student.scores?.[subj.id] as
                   | SubjectScore
                   | undefined;
                 return (
-                  <Text key={subj.id} style={styles.tableCell}>
+                  <Text
+                    key={subj.id}
+                    style={[styles.tableCell, styles.verticalDivider]}
+                  >
                     {score?.incorrect || 0}
                   </Text>
                 );
@@ -584,13 +601,18 @@ export const CombinedExamResultPDF: React.FC<CombinedPDFProps> = ({
             </View>
 
             <View style={styles.tableRow} wrap={false}>
-              <Text style={styles.tableCellBold}>QİYMƏT</Text>
+              <Text style={[styles.tableCellBold, styles.verticalDivider]}>
+                QİYMƏT
+              </Text>
               {config.map((subj) => {
                 const score = student.scores?.[subj.id] as
                   | SubjectScore
                   | undefined;
                 return (
-                  <Text key={subj.id} style={styles.tableCellBold}>
+                  <Text
+                    key={subj.id}
+                    style={[styles.tableCellBold, styles.verticalDivider]}
+                  >
                     {score ? score.netScore.toFixed(0) : "0"}
                   </Text>
                 );
