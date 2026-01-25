@@ -22,12 +22,16 @@ import {
   FileText,
   Loader2,
   FileDown,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   ParsedStudent,
   SubjectConfig,
+  SubjectSegment,
   DEFAULT_SUBJECT_CONFIG,
   CLASS_CONFIGS,
+  BURAXILIS_CONFIGS,
 } from "@/lib/omr-parser";
 import { GradedStudent, SubjectScore } from "@/lib/grading";
 import clsx from "clsx";
@@ -107,11 +111,13 @@ function SortableSubjectItem(props: {
 }
 
 // Internal component for the subject row
+// Internal component for the subject row
 const SubjectRow = React.memo(
   ({
     subject,
     index,
     handleUpdateSubject,
+    handleSegmentConfigUpdate,
     handleRemoveSubject,
     dragListeners,
   }: {
@@ -122,89 +128,154 @@ const SubjectRow = React.memo(
       field: keyof SubjectConfig,
       val: any
     ) => void;
+    handleSegmentConfigUpdate: (
+      subjectIdx: number,
+      segmentIdx: number,
+      field: keyof SubjectSegment,
+      val: number
+    ) => void;
     handleRemoveSubject: (idx: number) => void;
     dragListeners?: any;
   }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
     return (
-      <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100 group hover:border-indigo-200 transition-colors bg-white shadow-sm">
-        <span
-          className="w-8 text-slate-400 flex justify-center cursor-grab active:cursor-grabbing hover:text-indigo-500 outline-none"
-          {...dragListeners}
-        >
-          <GripVertical className="w-5 h-5" />
-        </span>
-        <input
-          type="text"
-          value={subject.name}
-          onChange={(e) => handleUpdateSubject(index, "name", e.target.value)}
-          placeholder="Fənn adı"
-          className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-        <div className="flex items-center gap-2">
-          <div className="flex flex-col">
-            <span className="text-[10px] text-slate-400 font-medium ml-1">
-              Sual
+      <div className="flex flex-col bg-slate-50 rounded-xl border border-slate-100 group hover:border-indigo-200 transition-colors bg-white shadow-sm overflow-hidden">
+        <div className="flex items-center gap-4 p-3">
+            <span
+              className="w-8 text-slate-400 flex justify-center cursor-grab active:cursor-grabbing hover:text-indigo-500 outline-none"
+              {...dragListeners}
+            >
+              <GripVertical className="w-5 h-5" />
             </span>
             <input
-              type="number"
-              value={subject.length}
-              onChange={(e) =>
-                handleUpdateSubject(
-                  index,
-                  "length",
-                  parseInt(e.target.value) || 0
-                )
-              }
-              className="w-16 bg-white border border-slate-200 rounded-lg px-2 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center"
+              type="text"
+              value={subject.name}
+              onChange={(e) => handleUpdateSubject(index, "name", e.target.value)}
+              placeholder="Fənn adı"
+              className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-slate-400 font-medium ml-1">
-              Bal
-            </span>
-            <input
-              type="number"
-              value={subject.points !== undefined ? subject.points : 5}
-              onChange={(e) =>
-                handleUpdateSubject(
-                  index,
-                  "points",
-                  parseFloat(e.target.value) || 0
-                )
-              }
-              className="w-16 bg-white border border-slate-200 rounded-lg px-2 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-indigo-600"
-            />
-          </div>
+            <div className="flex items-center gap-2">
+              <div className="flex flex-col">
+                <span className="text-[10px] text-slate-400 font-medium ml-1">
+                  Sual
+                </span>
+                <div className="relative">
+                    <input
+                      type="text"
+                      value={subject.segments ? `${subject.segments.reduce((acc, s) => acc + s.count, 0)} sual` : subject.length}
+                      disabled={true}
+                      readOnly
+                      className={cn(
+                          "w-20 bg-white border border-slate-200 rounded-lg px-2 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center",
+                           "bg-slate-50 text-slate-500"
+                      )}
+                    />
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-slate-400 font-medium ml-1">
+                  Bal
+                </span>
+                <input
+                  type="number"
+                  value={subject.points !== undefined ? Number(subject.points).toFixed(0) : 0}
+                  onChange={(e) =>
+                    handleUpdateSubject(
+                      index,
+                      "points",
+                      parseFloat(e.target.value) || 0
+                    )
+                  }
+                  className="w-16 bg-white border border-slate-200 rounded-lg px-2 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-indigo-600"
+                />
+              </div>
+            </div>
+            
+            {subject.segments && (
+                <button 
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                >
+                    {isExpanded ? <ChevronUp className="w-5 h-5"/> : <ChevronDown className="w-5 h-5"/>}
+                </button>
+            )}
+
+            <button
+              onClick={() => handleRemoveSubject(index)}
+              className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
         </div>
-        <button
-          onClick={() => handleRemoveSubject(index)}
-          className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        
+        {/* Expanded Segment Editor */}
+        {isExpanded && subject.segments && (
+            <div className="bg-slate-50 p-4 border-t border-slate-100 grid gap-3 animate-in slide-in-from-top-2 duration-200">
+                <div className="grid grid-cols-12 gap-2 text-[10px] uppercase font-bold text-slate-400 px-2">
+                    <div className="col-span-4">Sual Tipi</div>
+                    <div className="col-span-4 text-center">Sual Sayı</div>
+                    <div className="col-span-4 text-center">1 Sualın Balı</div>
+                </div>
+                {subject.segments.map((seg, i) => (
+                    <div key={i} className="grid grid-cols-12 gap-2 items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
+                        <div className="col-span-4 text-xs font-semibold text-slate-700 px-2 capitalize">
+                           {seg.type === 'closed' ? 'Qapalı' : seg.type === 'numeric' ? 'Rəqəm' : 'Açıq'}
+                        </div>
+                        <div className="col-span-4 flex justify-center">
+                            <input
+                                type="number"
+                                min={0}
+                                value={seg.count}
+                                onChange={(e) => handleSegmentConfigUpdate(index, i, 'count', parseInt(e.target.value) || 0)}
+                                className="w-16 px-2 py-1 text-center border border-slate-200 rounded text-sm focus:border-indigo-500 outline-none"
+                            />
+                        </div>
+                        <div className="col-span-4 flex justify-center">
+                            <input
+                                type="number"
+                                min={0}
+                                step={0.1}
+                                value={seg.points}
+                                onChange={(e) => handleSegmentConfigUpdate(index, i, 'points', parseFloat(e.target.value) || 0)}
+                                className="w-16 px-2 py-1 text-center border border-slate-200 rounded text-sm focus:border-indigo-500 outline-none font-mono text-indigo-600"
+                            />
+                        </div>
+                    </div>
+                ))}
+                <div className="text-center text-xs text-slate-400 mt-2 font-medium">
+                    Toplam Sual: {subject.segments.reduce((acc, s) => acc + s.count, 0)} | 
+                    Təxmini Toplam Bal: {subject.segments.reduce((acc, s) => acc + (s.count * s.points), 0).toFixed(1)}
+                </div>
+            </div>
+        )}
       </div>
     );
   }
 );
+SubjectRow.displayName = "SubjectRow"; // Re-add display name
 
-SubjectRow.displayName = "SubjectRow";
 
 const SubjectKeyInputs = ({
   variant,
   value,
   onChange,
   config,
+  openWeights,
+  onOpenWeightsChange,
 }: {
   variant: string;
   value: string;
   onChange: (val: string) => void;
   config: SubjectConfig[];
+  openWeights?: Record<string, number[]>;
+  onOpenWeightsChange?: (subjectId: string, weights: number[]) => void;
 }) => {
   const handleSubjectChange = (subjectIndex: number, newValue: string) => {
     let currentIndex = 0;
     let newValueFull = value || "";
 
-    const totalLength = config.reduce((acc, s) => acc + s.length, 0);
+    const totalLength = config.reduce((acc, s) => acc + (s.length || 0), 0);
     if (newValueFull.length < totalLength) {
       newValueFull = newValueFull.padEnd(totalLength, " ");
     }
@@ -212,7 +283,7 @@ const SubjectKeyInputs = ({
     let result = "";
 
     config.forEach((subj, idx) => {
-      const segLen = subj.length;
+      const segLen = subj.length || 0;
       const oldSeg = newValueFull.slice(currentIndex, currentIndex + segLen);
 
       if (idx === subjectIndex) {
@@ -226,10 +297,54 @@ const SubjectKeyInputs = ({
     onChange(result);
   };
 
+
+  const handleSegmentChange = (
+    subjectIndex: number,
+    segmentIndex: number,
+    newValue: string
+  ) => {
+    let currentIndex = 0;
+    const subject = config[subjectIndex];
+    if (!subject) return;
+    
+    // Get current full subject value
+    let subjectGlobalStart = 0;
+    for(let i=0; i<subjectIndex; i++) {
+        subjectGlobalStart += config[i]?.length || 0;
+    }
+    
+    const subjectLength = subject.length || 0;
+    const currentSubjectValue = (value || "").slice(subjectGlobalStart, subjectGlobalStart + subjectLength).padEnd(subjectLength, " ");
+
+    if (!subject.segments) {
+        handleSubjectChange(subjectIndex, newValue);
+        return;
+    }
+
+    let segStart = 0;
+    let newSubjectString = "";
+    
+    subject.segments.forEach((seg, idx) => {
+        const segLen = seg.count * seg.lengthPerItem;
+        const currentSegValue = currentSubjectValue.slice(segStart, segStart + segLen);
+        
+        if (idx === segmentIndex) {
+            newSubjectString += newValue.padEnd(segLen, " ").slice(0, segLen);
+        } else {
+            newSubjectString += currentSegValue;
+        }
+        segStart += segLen;
+    });
+
+    handleSubjectChange(subjectIndex, newSubjectString);
+  }
+
+  const [editingSegment, setEditingSegment] = useState<{subjectIndex: number, segmentIndex: number} | null>(null);
+
   let currentReadIndex = 0;
 
   return (
-    <div className="flex flex-col gap-3 w-full p-4 bg-slate-50/50 rounded-xl border border-slate-100">
+    <div className="flex flex-col gap-3 w-full p-4 bg-slate-50/50 rounded-xl border border-slate-100 relative">
       <div className="flex items-center gap-2 mb-1">
         <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200">
           {variant}
@@ -239,24 +354,26 @@ const SubjectKeyInputs = ({
         </span>
       </div>
 
-      <div className="flex flex-wrap items-start gap-4">
-        {config.map((subject, idx) => {
+      <div className="flex flex-wrap items-start gap-6">
+        {config.map((subject, subjectIdx) => {
+          const subjLen = subject.length || 0;
           const start = currentReadIndex;
-          const end = currentReadIndex + subject.length;
-          const subjectValue = (value || "").slice(start, end).trim();
-          currentReadIndex += subject.length;
+          const end = currentReadIndex + subjLen;
+          const subjectValue = (value || "").slice(start, end).trim(); 
+          const rawSubjectValue = (value || "").slice(start, end).padEnd(subjLen, " ");
+          
+          currentReadIndex += subjLen;
 
           return (
             <div
-              key={subject.id || idx}
+              key={subject.id || subjectIdx}
               className="flex flex-col items-start gap-1.5"
-              style={{ width: `${Math.max(subject.length + 10, 14)}ch` }}
             >
               <div className="flex items-center gap-2 w-full">
                 <div
                   className={cn(
                     "w-2 h-2 rounded-full flex-shrink-0",
-                    subject.color.split(" ")[0]
+                    (subject.color || "").split(" ")[0]
                   )}
                 ></div>
                 <label
@@ -267,25 +384,201 @@ const SubjectKeyInputs = ({
                 </label>
               </div>
 
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  value={subjectValue}
-                  maxLength={subject.length}
-                  onChange={(e) =>
-                    handleSubjectChange(idx, e.target.value.toUpperCase())
-                  }
-                  className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono tracking-widest text-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:outline-none uppercase transition-all shadow-sm"
-                  placeholder="Cavab..."
-                />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono pointer-events-none">
-                  {subjectValue.length}/{subject.length}
-                </span>
-              </div>
+              {!subject.segments ? (
+                <div className="relative" style={{ width: `${Math.max((subject.length || 0) + 4, 14)}ch` }}>
+                    <input
+                    type="text"
+                    value={rawSubjectValue.trim()}
+                    maxLength={subject.length}
+                    onChange={(e) =>
+                        handleSubjectChange(subjectIdx, e.target.value.toUpperCase())
+                    }
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono tracking-widest text-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:outline-none uppercase transition-all shadow-sm"
+                    placeholder="Cavab..."
+                    />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono pointer-events-none">
+                    {rawSubjectValue.trim().length}/{subject.length}
+                    </span>
+                </div>
+
+              ) : (
+                  <div className="flex items-start gap-2">
+                       {subject.segments.map((seg, segIdx) => {
+                           let segStart = 0;
+                           for(let k=0; k<segIdx; k++) {
+                               const s = subject.segments![k];
+                               if (s) segStart += s.count * s.lengthPerItem;
+                           }
+                           
+                           const segLen = seg.count * seg.lengthPerItem;
+                           const segVal = rawSubjectValue.slice(segStart, segStart + segLen);
+                           
+                           const label = seg.type === 'closed' ? 'Qapalı' : seg.type === 'numeric' ? 'Rəqəm' : 'Açıq';
+                           const showLabel = subject.segments!.length > 1;
+                           const inputWidth = Math.max(segLen + 2, 8); // ch
+
+                           // Modified: Use Modal for both Numeric AND Open types
+                           if (seg.type === 'numeric' || seg.type === 'open') {
+                                return (
+                                    <div key={segIdx} className="flex flex-col gap-1 w-full flex-1 min-w-[120px]">
+                                        {showLabel && <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">{label}</span>}
+                                        <button
+                                            onClick={() => setEditingSegment({ subjectIndex: subjectIdx, segmentIndex: segIdx })}
+                                            className={cn("w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 h-[38px]",
+                                                seg.type === 'open' ? "text-amber-600 bg-amber-50 hover:bg-amber-100 hover:border-amber-300" : "text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300"
+                                            )}
+                                        >
+                                            <Key className="w-3 h-3" />
+                                            Daxil et
+                                        </button>
+                                         <span className="text-[8px] text-slate-300 font-mono text-right px-1">
+                                            {seg.count} sual
+                                        </span>
+                                    </div>
+                                );
+                           }
+
+                           return (
+                               <div key={segIdx} className="flex flex-col gap-1">
+                                    {showLabel && <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">{label}</span>}
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={segVal.trim()}
+                                            maxLength={segLen}
+                                            onChange={(e) => handleSegmentChange(subjectIdx, segIdx, e.target.value.toUpperCase())}
+                                            className={cn(
+                                                "bg-white border border-slate-200 rounded-lg px-2 py-2 text-sm font-mono tracking-widest text-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:outline-none uppercase transition-all shadow-sm",
+                                            )}
+                                            style={{ width: `${inputWidth}ch`, minWidth: '60px' }}
+                                            placeholder="..."
+                                        />
+                                         <span className="absolute right-1 bottom-0.5 text-[8px] text-slate-300 font-mono pointer-events-none">
+                                            {seg.count}
+                                        </span>
+                                    </div>
+                               </div>
+                           )
+                       })}
+                  </div>
+              )}
             </div>
           );
         })}
       </div>
+      
+      {/* Detail Editor Modal */}
+      {editingSegment && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 p-4 animate-in fade-in duration-200">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200">
+                  <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                       {(() => {
+                           const { subjectIndex, segmentIndex } = editingSegment;
+                           const subject = config[subjectIndex];
+                           const seg = subject.segments![segmentIndex];
+                           return <h3 className="font-bold text-slate-700">{seg.type === 'open' ? 'Açıq Sual Əmsalları' : 'Rəqəm Sualları'}</h3>
+                       })()}
+                      <button onClick={() => setEditingSegment(null)} className="text-slate-400 hover:text-slate-600">
+                          <X className="w-5 h-5"/>
+                      </button>
+                  </div>
+                  <div className="p-6 max-h-[60vh] overflow-y-auto">
+                      <div className="space-y-4">
+                          {(() => {
+                              const { subjectIndex, segmentIndex } = editingSegment;
+                              const subject = config[subjectIndex];
+                              const seg = subject.segments![segmentIndex];
+                              
+                              if (seg.type === 'open' && openWeights && onOpenWeightsChange) {
+                                  // Open Question Mode (Weight Input)
+                                  const currentWeights = openWeights[subject.id] || [];
+                                  
+                                  return Array.from({ length: seg.count }).map((_, qIdx) => {
+                                      return (
+                                          <div key={qIdx} className="flex items-center gap-4">
+                                              <span className="w-16 text-xs font-bold text-slate-500 uppercase">Sual {qIdx + 1}</span>
+                                              <input
+                                                  type="number"
+                                                  step="0.01"
+                                                  value={currentWeights[qIdx] === undefined || currentWeights[qIdx] === 0 ? (currentWeights[qIdx] === 0 ? "0" : "") : currentWeights[qIdx]}
+                                                  onFocus={(e) => e.target.select()}
+                                                  placeholder="Əmsal (məs: 1.25)"
+                                                  className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-lg font-mono text-center focus:ring-2 focus:ring-amber-500 outline-none text-amber-700 font-bold"
+                                                  onChange={(e) => {
+                                                      let val = e.target.value;
+                                                      
+                                                      // UX: If value is "01", "05" etc, remove leading zero
+                                                      if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
+                                                          val = val.substring(1);
+                                                      }
+
+                                                      const numVal = parseFloat(val);
+                                                      const newWeights = [...currentWeights];
+                                                      // Fill gaps if any
+                                                      for(let i=0; i<seg.count; i++) {
+                                                          if(newWeights[i] === undefined) newWeights[i] = 0; 
+                                                      }
+                                                      
+                                                      // If empty string or NaN, store as 0 but maybe we want to allow empty?
+                                                      // Let's store 0 for logic, but UI handles empty.
+                                                      newWeights[qIdx] = isNaN(numVal) ? 0 : numVal;
+                                                      onOpenWeightsChange(subject.id, newWeights);
+                                                  }}
+                                              />
+                                          </div>
+                                      )
+                                  });
+                              }
+                              
+                              // Numeric Question Mode (String Input)
+                              // Calculate start index
+                              let start = 0;
+                              for(let i=0; i<subjectIndex; i++) start += (config[i].length || 0);
+                              const segmentStart = subject.segments!.slice(0, segmentIndex).reduce((acc, s) => acc + (s.count * s.lengthPerItem), 0);
+                              const globalStart = start + segmentStart;
+                              const segmentValue = (value || "").slice(globalStart, globalStart + (seg.count * seg.lengthPerItem)).padEnd(seg.count * seg.lengthPerItem, " ");
+                              
+                              return Array.from({ length: seg.count }).map((_, qIdx) => {
+                                  const qStart = qIdx * seg.lengthPerItem;
+                                  const qVal = segmentValue.slice(qStart, qStart + seg.lengthPerItem);
+                                  
+                                  return (
+                                      <div key={qIdx} className="flex items-center gap-4">
+                                          <span className="w-16 text-xs font-bold text-slate-500 uppercase">Sual {qIdx + 1}</span>
+                                          <input
+                                              type="text"
+                                              value={qVal.trim()}
+                                              maxLength={seg.lengthPerItem}
+                                              className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-lg font-mono tracking-[0.5em] text-center uppercase focus:ring-2 focus:ring-indigo-500 outline-none"
+                                              placeholder="....."
+                                              onChange={(e) => {
+                                                  // Construct new full segment string
+                                                  const newVal = e.target.value.slice(0, seg.lengthPerItem);
+                                                  const newSegmentValue = 
+                                                      segmentValue.slice(0, qStart) + 
+                                                      newVal.padEnd(seg.lengthPerItem, " ") + 
+                                                      segmentValue.slice(qStart + seg.lengthPerItem);
+                                                  
+                                                  handleSegmentChange(subjectIndex, segmentIndex, newSegmentValue);
+                                              }}
+                                          />
+                                      </div>
+                                  );
+                              });
+                          })()}
+                      </div>
+                  </div>
+                  <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                      <button 
+                          onClick={() => setEditingSegment(null)}
+                          className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors"
+                      >
+                          Təsdiqlə
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 };
@@ -306,12 +599,15 @@ const TableRow = React.memo(
     const totalScore = item.scores ? item.scores.totalNetScore : 0;
     const config = configMap[item.sinif] || configMap["default"];
     const maxScore = config.reduce(
-      (acc, curr) => acc + curr.length * (curr.points || 0),
+      (acc, curr) => {
+          if (curr.segments) return acc + curr.segments.reduce((sAcc, s) => sAcc + (s.count * s.points), 0);
+          return acc + (curr.length || 0) * (curr.points || 0);
+      },
       0
     );
 
     return (
-      <tr className="hover:bg-slate-50 transition-colors">
+      <tr className="hover:bg-slate-50 transition-colors border-b border-slate-100">
         <td className="px-3 py-3 font-mono font-medium text-slate-600 text-xs w-[80px]">
           {item.isNomresi}
         </td>
@@ -350,45 +646,96 @@ const TableRow = React.memo(
           const score = item.scores
             ? (item.scores[subject.id] as SubjectScore)
             : null;
-          const width = Math.max(100, subject.length * 15);
+            
+          // Find actual config for this student's class to get segments
+          const studentSubjectConfig = config.find(s => s.id === subject.id);
+          const segments = studentSubjectConfig?.segments || [{ type: 'closed', count: subject.length || 0, points: 0, lengthPerItem: 1 }];
+
+          const width = Math.max(120, (subject.length || 10) * 12);
 
           return (
             <td
               key={subject.id}
-              className="px-3 py-2 text-right border-l border-slate-50"
+              className="px-3 py-2 text-left border-l border-slate-50 align-top"
               style={{ minWidth: `${width}px`, width: `${width}px` }}
             >
-              <div className="flex flex-col items-end">
-                <span className="font-mono text-sm font-medium text-slate-700">
-                  {score ? score.netScore.toFixed(2) : "-"}
+              <div className="flex flex-col items-start gap-1">
+                <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+                  {score ? score.netScore.toFixed(1) : "-"}
                 </span>
+                
                 {score && score.studentAnswerString && (
-                  <div className="flex flex-col mt-1 select-none">
-                    <div className="flex font-mono text-[10px] leading-tight tracking-wider">
-                      {score.studentAnswerString.split("").map((char, i) => {
-                        const keyChar = score.correctAnswerString[i] || " ";
-                        let color = "text-slate-300";
-
-                        if (keyChar === "*") {
-                          color = "text-green-600 font-bold";
-                        } else if (char === " ") {
-                          color = "text-slate-300";
-                        } else if (char === keyChar) {
-                          color = "text-green-600 font-bold";
-                        } else {
-                          color = "text-red-500 font-bold";
-                        }
-
-                        return (
-                          <span
-                            key={i}
-                            className={cn("w-[10px] text-center", color)}
-                          >
-                            {char}
-                          </span>
-                        );
-                      })}
-                    </div>
+                  <div className="flex flex-wrap gap-1 mt-1 select-none">
+                     {(() => {
+                         let currentIndex = 0;
+                         return segments.map((seg, segIdx) => {
+                             const segLen = seg.count * seg.lengthPerItem;
+                             const sSegment = score.studentAnswerString.slice(currentIndex, currentIndex + segLen);
+                             const kSegment = score.correctAnswerString.slice(currentIndex, currentIndex + segLen);
+                             currentIndex += segLen;
+                             
+                             if (seg.type === 'closed') {
+                                 return sSegment.split('').map((char, i) => {
+                                     const keyChar = kSegment[i] || ' ';
+                                     let color = "bg-slate-100 text-slate-400"; // Default/Empty
+                                     
+                                     if (keyChar === '*') {
+                                        color = "bg-green-100 text-green-700 border-green-200";
+                                     } else if (char === ' ') {
+                                        color = "bg-slate-50 text-slate-300 border-slate-100";
+                                     } else if (char === keyChar) {
+                                        color = "bg-green-100 text-green-700 border-green-200 font-bold";
+                                     } else {
+                                        color = "bg-red-50 text-red-600 border-red-100 font-bold";
+                                     }
+                                     return (
+                                         <span key={`c-${segIdx}-${i}`} className={cn("w-4 h-4 text-[10px] flex items-center justify-center rounded border", color)}>
+                                             {char}
+                                         </span>
+                                     )
+                                 });
+                             } 
+                             else if (seg.type === 'numeric') {
+                                 // Render chunks of 5
+                                 const answers: React.ReactNode[] = [];
+                                 for(let i=0; i<seg.count; i++) {
+                                     const start = i * seg.lengthPerItem;
+                                     const sVal = sSegment.slice(start, start + seg.lengthPerItem).trim();
+                                     const kVal = kSegment.slice(start, start + seg.lengthPerItem).trim();
+                                     
+                                     const isCorrect = sVal && kVal && sVal === kVal;
+                                     const color = isCorrect ? "bg-green-50 text-green-700 border-green-200" : sVal ? "bg-red-50 text-red-600 border-red-200" : "bg-slate-50 text-slate-300";
+                                     
+                                     answers.push(
+                                         <span key={`n-${segIdx}-${i}`} className={cn("px-1.5 py-0.5 text-[9px] font-mono rounded border whitespace-nowrap", color)} title={`Correct: ${kVal}`}>
+                                             {sVal || "-"}
+                                         </span>
+                                     );
+                                 }
+                                 return answers;
+                             }
+                             else if (seg.type === 'open') {
+                                 // Render scores
+                                 const answers: React.ReactNode[] = [];
+                                 for(let i=0; i<seg.count; i++) {
+                                     const sVal = sSegment[i]; // Char 0, 1, 2
+                                     const scoreVal = parseInt(sVal) || 0;
+                                     const color = scoreVal > 0 ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-slate-50 text-slate-300 border-slate-200";
+                                     
+                                     answers.push(
+                                         <span key={`o-${segIdx}-${i}`} className={cn("w-4 h-4 text-[10px] flex items-center justify-center rounded border font-bold", color)} title={`Score: ${sVal}`}>
+                                             {sVal}
+                                         </span>
+                                     )
+                                 }
+                                  return (
+                                      <div key={`g-${segIdx}`} className="flex gap-0.5 ml-1 pl-1 border-l border-slate-200">
+                                          {answers}
+                                      </div>
+                                  );
+                             }
+                         })
+                     })()}
                   </div>
                 )}
               </div>
@@ -402,6 +749,7 @@ const TableRow = React.memo(
 TableRow.displayName = "TableRow";
 
 export default function OMRDashboard() {
+  const [examType, setExamType] = useState<'standard' | 'buraxilis'>('standard');
   const [rawText, setRawText] = useState("");
   const [parsedData, setParsedData] = useState<ParsedStudent[] | null>(null);
   const [gradedData, setGradedData] = useState<GradedStudent[] | null>(null);
@@ -414,6 +762,31 @@ export default function OMRDashboard() {
     default: DEFAULT_SUBJECT_CONFIG,
     ...CLASS_CONFIGS,
   });
+
+  useEffect(() => {
+    if (examType === 'buraxilis') {
+        setConfigMap({
+            default: BURAXILIS_CONFIGS['09'] || DEFAULT_SUBJECT_CONFIG, 
+            ...BURAXILIS_CONFIGS
+        });
+      setActiveClass("09");
+      
+    } else {
+      setConfigMap({
+        default: DEFAULT_SUBJECT_CONFIG,
+        ...CLASS_CONFIGS,
+      });
+      setConfigActiveTab("01");
+      setActiveClass("01");
+    }
+    // Only clear parsed results, KEEP the raw text/file input so user doesn't lose it if they switch modes.
+    // This also fixes the issue where inputs might be freezing if this effect runs too often.
+    setParsedData(null);
+    setGradedData(null);
+    setNeededKeys({});
+    setShowResults(false);
+  }, [examType]);
+
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [configActiveTab, setConfigActiveTab] = useState<string>("01");
 
@@ -439,44 +812,48 @@ export default function OMRDashboard() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Initialize Worker
+  // 1. Worker Lifecycle (Mount/Unmount)
+  const [openWeights, setOpenWeights] = useState<Record<string, Record<string, number[]>>>({}); // {class: {subjectId: [w1, w2]}}
+
   useEffect(() => {
     workerRef.current = new Worker(
       new URL("../workers/omr.worker.ts", import.meta.url)
     );
-
-    workerRef.current.onmessage = (event) => {
-      const { type, data, error } = event.data;
-      if (type === "PARSE_COMPLETE") {
-        handleParseComplete(data);
-        setIsProcessing(false);
-      } else if (type === "GRADE_COMPLETE") {
-        setGradedData(data);
-        setIsProcessing(false); // Only if we blocked parsing, but for grading we might want silent update or small indicator
-      } else if (type === "ERROR") {
-        console.error("Worker Error:", error);
-        setIsProcessing(false);
-        alert("An error occurred during processing: " + error);
-      }
-    };
-
     return () => {
       workerRef.current?.terminate();
     };
   }, []);
 
-  // Async Parsing Trigger
+  // 2. Message Handler (Updates when handling logic changes)
+  // This ensures handleParseComplete uses the LATEST configMap
+  useEffect(() => {
+      if (!workerRef.current) return;
+
+      workerRef.current.onmessage = (event) => {
+          const { type, data, error } = event.data;
+          if (type === "PARSE_COMPLETE") {
+              handleParseComplete(data);
+              setIsProcessing(false);
+          } else if (type === "GRADE_COMPLETE") {
+              setGradedData(data);
+              setIsProcessing(false);
+          } else if (type === "ERROR") {
+              console.error("Worker Error:", error);
+              setIsProcessing(false);
+              alert("An error occurred during processing: " + error);
+          }
+      };
+  }, [configMap, answerKeys]); // Dependencies that handleParseComplete/grading logic might need
+
   const handleParse = () => {
     if (!rawText.trim()) return;
     setIsProcessing(true);
-    workerRef.current?.postMessage({ type: "PARSE", rawText, configMap });
+    // Send examType to worker to enforce correct parsing mode
+    workerRef.current?.postMessage({ type: "PARSE", rawText, configMap, examType });
   };
 
   const handleParseComplete = (results: ParsedStudent[]) => {
     setParsedData(results);
-    // Initialize graded data with raw results until real grading happens
-    // Actually simpler to just wait for grading, but let's set it to sync valid/invalid counts early if needed.
-    // However, logic below relies on PARSING completing first to detect classes.
 
     const detected: Record<string, Set<string>> = {};
     const detectedClassesSet = new Set<string>();
@@ -520,21 +897,20 @@ export default function OMRDashboard() {
     setShowResults(false);
   };
 
-  // Trigger Grading when dependencies change
   useEffect(() => {
     if (parsedData && workerRef.current) {
-      // Debounce grading to prevent UI stutter while typing keys
       const timer = setTimeout(() => {
         workerRef.current?.postMessage({
           type: "GRADE",
           parsedData,
           answerKeys,
           configMap,
+          openWeights,
         });
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [parsedData, answerKeys, configMap]);
+  }, [parsedData, answerKeys, configMap, openWeights]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -590,13 +966,13 @@ export default function OMRDashboard() {
     setNeededKeys({});
     setShowResults(false);
     setActiveClass("");
+    setOpenWeights({});
   };
 
   const handleCheckAnswers = () => {
     setShowResults(true);
   };
 
-  // Download logic - using ref to latest gradedData if needed, or just dep
   const handleDownloadJSON = () => {
     if (!gradedData) return;
     const validRecords = gradedData.filter((d) => d.isValid);
@@ -657,7 +1033,6 @@ export default function OMRDashboard() {
     try {
       const config = configMap[student.sinif] || configMap["default"] || [];
 
-      // Calculate rank if needed
       let rank: number | undefined;
       if (includeRank && gradedData) {
         const studentsWithScores = gradedData
@@ -725,8 +1100,7 @@ export default function OMRDashboard() {
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target?.result as string;
-        setRawText(text); // Helper will trigger parse via useEffect if we wanted, but we require manual button press for parse usually.
-        // Here we just set text.
+        setRawText(text);
         setParsedData(null);
         setGradedData(null);
         setNeededKeys({});
@@ -737,17 +1111,15 @@ export default function OMRDashboard() {
     }
   }, []);
 
-  // Filter valid data for display
   const allValidData = useMemo(
     () => gradedData?.filter((d) => d.isValid) || [],
     [gradedData]
   );
 
-  // Virtualization
   const rowVirtualizer = useVirtualizer({
     count: allValidData.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 53, // Approximate row height
+    estimateSize: () => 53,
     overscan: 20,
   });
 
@@ -766,23 +1138,125 @@ export default function OMRDashboard() {
 
   const detectedClasses = Object.keys(neededKeys);
 
-  // Configuration Handlers
   const handleUpdateSubject = useCallback(
     (index: number, field: keyof SubjectConfig, value: string | number) => {
       setConfigMap((prev) => {
         const newMap = { ...prev };
         const currentConfig = [...(newMap[configActiveTab] || [])];
-        currentConfig[index] = { ...currentConfig[index], [field]: value };
+        const oldSubject = currentConfig[index];
+        const newSubject = { ...oldSubject, [field]: value };
+        
+        // Handle name change ID update
         if (field === "name") {
-          currentConfig[index].id = (value as string)
+          newSubject.id = (value as string)
             .toLowerCase()
             .replace(/\s+/g, "");
         }
+        
+        // Handle Points Update for Segmented Subjects (Scale proportionally)
+        if (field === 'points' && oldSubject.segments && oldSubject.segments.length > 0) {
+             const oldTotal = oldSubject.points || 0;
+             const newTotal = Number(value);
+             
+             if (oldTotal > 0 && newTotal > 0) {
+                 const multiplier = newTotal / oldTotal;
+                 newSubject.segments = oldSubject.segments.map(s => ({
+                     ...s,
+                     points: Number((s.points * multiplier).toFixed(3))
+                 }));
+             }
+        }
+        
+        // Prevent length update if segmented (length is derived/fixed by structure)
+        if (field === 'length' && oldSubject.segments) {
+             // Do nothing or ignore
+             return prev; 
+        }
+
+        currentConfig[index] = newSubject;
         newMap[configActiveTab] = currentConfig;
         return newMap;
       });
     },
     [configActiveTab]
+  );
+
+  const handleSegmentConfigUpdate = useCallback(
+    (subjectIndex: number, segmentIndex: number, field: keyof SubjectSegment, value: number) => {
+      setConfigMap((prev) => {
+        const newMap = { ...prev };
+        const currentConfig = [...(newMap[configActiveTab] || [])];
+        const oldSubject = currentConfig[subjectIndex];
+        const oldLength = oldSubject.length || 0;
+        
+        const newSegments = [...(oldSubject.segments || [])];
+
+        newSegments[segmentIndex] = {
+          ...newSegments[segmentIndex],
+          [field]: value,
+        };
+
+        const newTotalLength = newSegments.reduce(
+          (acc, s) => acc + s.count * s.lengthPerItem,
+          0
+        );
+        const newTotalPoints = newSegments.reduce(
+          (acc, s) => acc + s.count * s.points,
+          0
+        );
+
+        currentConfig[subjectIndex] = {
+          ...oldSubject,
+          segments: newSegments,
+          length: newTotalLength,
+          points: Number(newTotalPoints.toFixed(1)),
+        };
+
+        newMap[configActiveTab] = currentConfig;
+        
+        // --- SYNC ANSWER KEYS ---
+        // If length changed, we need to adjust the answer keys for this class to prevent alignment issues
+        if (newTotalLength !== oldLength) {
+             const classKeys = answerKeys[configActiveTab];
+             if (classKeys) {
+                 const newKeys = { ...classKeys };
+                 Object.keys(newKeys).forEach(variant => {
+                     let key = newKeys[variant] || "";
+                     
+                     // 1. Calculate Start Index of this subject
+                     let subjectStart = 0;
+                     for(let i=0; i<subjectIndex; i++) {
+                         subjectStart += (currentConfig[i].length || 0); // Use CURRENT config for previous subjects
+                     }
+                     
+                     // 2. Extract parts
+                     const beforeSubject = key.slice(0, subjectStart);
+                     const subjectPart = key.slice(subjectStart, subjectStart + oldLength);
+                     const afterSubject = key.slice(subjectStart + oldLength);
+                     
+                     // 3. Resize subject part
+                     let newSubjectPart = subjectPart;
+                     if (newTotalLength > oldLength) {
+                         newSubjectPart = subjectPart.padEnd(newTotalLength, ' ');
+                     } else {
+                         newSubjectPart = subjectPart.slice(0, newTotalLength);
+                     }
+                     
+                     // 4. Reconstruct
+                     newKeys[variant] = beforeSubject + newSubjectPart + afterSubject;
+                 });
+                 // Update Answer Keys State
+                 setAnswerKeys(prevKeys => ({
+                     ...prevKeys,
+                     [configActiveTab]: newKeys
+                 }));
+             }
+        }
+
+        return newMap;
+      });
+    },
+    [configActiveTab, answerKeys] 
   );
 
   const handleAddSubject = () => {
@@ -804,140 +1278,144 @@ export default function OMRDashboard() {
   const handleRemoveSubject = (index: number) => {
     setConfigMap((prev) => {
       const newMap = { ...prev };
-      const currentConfig = newMap[configActiveTab].filter(
-        (_, i) => i !== index
-      );
-      newMap[configActiveTab] = currentConfig;
+      const currentConfig = [...(newMap[configActiveTab] || [])];
+      newMap[configActiveTab] = currentConfig.filter((_, i) => i !== index);
       return newMap;
     });
   };
 
   const handleAddClassConfig = () => {
-    const className = prompt("Sinif nömrəsini daxil edin (məsələn: 9):");
-    if (className && !configMap[className]) {
-      setConfigMap((prev) => ({
-        ...prev,
-        [className]: DEFAULT_SUBJECT_CONFIG.map((s) => ({ ...s })),
-      }));
-      setConfigActiveTab(className);
+    const classNum = prompt("Sinif rəqəmini daxil edin (məs: 5):");
+    if (!classNum) return;
+    const formatted = classNum.padStart(2, "0");
+    if (configMap[formatted]) {
+      alert("Bu sinif artıq mövcuddur!");
+      return;
     }
+    setConfigMap((prev) => ({
+      ...prev,
+      [formatted]: prev["default"].map((s) => ({ ...s })),
+    }));
+    setConfigActiveTab(formatted);
   };
 
+  const activeConfig = configMap[configActiveTab] || [];
+  const activeConfigTotalLength = activeConfig.reduce(
+    (acc, curr) => {
+        if (curr.segments) {
+            return acc + curr.segments.reduce((sAcc, s) => sAcc + s.count, 0);
+        }
+        return acc + (curr.length || 0);
+    },
+    0
+  );
+  const activeConfigTotalScore = activeConfig.reduce(
+    (acc, curr) => {
+        if (curr.segments) return acc + (curr.points || 0);
+        return acc + (curr.length || 0) * (curr.points || 0);
+    },
+    0
+  );
+
   const allUniqueSubjects = useMemo(() => {
-    const subjectsMap = new Map<string, SubjectConfig>();
-    Object.values(configMap).forEach((config) => {
-      config.forEach((subj) => {
-        if (!subjectsMap.has(subj.id)) {
-          subjectsMap.set(subj.id, { ...subj });
-        } else {
-          // Update with max length found to ensure column fits all variants
-          const existing = subjectsMap.get(subj.id)!;
-          if (subj.length > existing.length) {
-            existing.length = subj.length;
-          }
-          subjectsMap.set(subj.id, existing);
+    const allSubjects = new Map<string, SubjectConfig>();
+    Object.values(configMap).forEach((configs) => {
+      configs.forEach((subj) => {
+        if (!allSubjects.has(subj.id)) {
+          allSubjects.set(subj.id, subj);
         }
       });
     });
-    return Array.from(subjectsMap.values());
+    return Array.from(allSubjects.values());
   }, [configMap]);
 
-  const activeConfigTotalLength = (configMap[configActiveTab] || []).reduce(
-    (acc, curr) => acc + curr.length,
-    0
-  );
-  const activeConfigTotalScore = (configMap[configActiveTab] || []).reduce(
-    (acc, curr) => acc + curr.length * (curr.points || 0),
-    0
-  );
-
   return (
-    <div className="min-h-screen bg-slate-50 p-8 font-sans text-slate-900">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8 font-sans text-slate-900">
+      <div className="max-w-[1600px] mx-auto space-y-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-              OMR Məlumat Analizi
-            </h1>
-            <p className="text-slate-500 mt-1">
-              Optik skanerdən gələn məlumatları JSON və cədvəl halına gətirin.
-            </p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="bg-white p-2.5 rounded-xl shadow-sm border border-slate-100">
+                <FileText className="w-8 h-8 text-indigo-600" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                OMR Dashboard
+              </h1>
+              <p className="text-slate-500 text-sm font-medium">
+                İmtahan nəticələrinin analizi
+              </p>
+            </div>
           </div>
-          <div className="flex gap-3">
-            {showResults && gradedData && (
-              <>
-                <button
-                  onClick={handleGenerateAllPDFs}
-                  disabled={isGeneratingPDFs || !examName.trim()}
-                  className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-                >
-                  {isGeneratingPDFs ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      PDF yaradılır...
-                    </>
-                  ) : (
-                    <>
-                      <FileDown className="w-4 h-4" />
-                      Birləşdirilmiş PDF Yüklə
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleDownloadJSON}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-                >
-                  <Download className="w-4 h-4" />
-                  JSON Yüklə
-                </button>
-              </>
-            )}
-            <button
-              onClick={() => setIsConfigOpen(true)}
-              className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-            >
-              <Settings className="w-4 h-4" />
-              Fənnlər
-            </button>
-            <button
-              onClick={handleClear}
-              className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-            >
-              <Trash2 className="w-4 h-4" />
-              Təmizlə
-            </button>
+          
+          <div className="flex items-center gap-4">
+             {/* Exam Type Selector */}
+             <div className="bg-white rounded-lg border border-slate-200 p-1 flex">
+                 <button 
+                    onClick={() => setExamType('standard')}
+                    className={cn("px-3 py-1.5 rounded-md text-sm font-medium transition-colors", 
+                        examType === 'standard' ? "bg-indigo-100 text-indigo-700" : "text-slate-500 hover:text-slate-700")}
+                 >
+                     Fənn İmtahanı
+                 </button>
+                 <button 
+                    onClick={() => setExamType('buraxilis')}
+                    className={cn("px-3 py-1.5 rounded-md text-sm font-medium transition-colors", 
+                        examType === 'buraxilis' ? "bg-indigo-100 text-indigo-700" : "text-slate-500 hover:text-slate-700")}
+                 >
+                     Buraxılış İmtahanı
+                 </button>
+             </div>
+
+              <button
+                onClick={() => setIsConfigOpen(true)}
+                className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all shadow-sm active:scale-95"
+              >
+                <Settings className="w-4 h-4" />
+                Konfiqurasiya
+              </button>
           </div>
         </div>
 
         {/* Configuration Modal */}
         {isConfigOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white w-full max-w-5xl h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white z-10">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">
-                    Fənn Konfiqurasiyası
+                  <h2 className="text-xl font-bold text-slate-800">
+                    Konfiqurasiya
                   </h2>
                   <p className="text-sm text-slate-500">
-                    Hər sinif üçün ayrı fənn bölgüsü təyin edin.
+                    Siniflər üzrə fənn və sual saylarını tənzimləyin
                   </p>
                 </div>
                 <button
                   onClick={() => setIsConfigOpen(false)}
-                  className="text-slate-400 hover:text-slate-600"
+                  className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="flex flex-1 overflow-hidden">
                 {/* Sidebar: Class List */}
-                <div className="w-64 bg-slate-50 border-r border-slate-200 p-4 overflow-y-auto">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 block">
+                <div className="w-64 bg-slate-50/50 border-r border-slate-100 flex flex-col p-4 overflow-y-auto">
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => setConfigActiveTab("default")}
+                      className={cn(
+                        "w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all mb-4",
+                        configActiveTab === "default"
+                          ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
+                          : "bg-white text-slate-600 border border-slate-200 hover:border-indigo-200"
+                      )}
+                    >
+                      Standart (Default)
+                    </button>
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 mb-2 mt-6">
                       Siniflər
-                    </label>
+                    </div>
                     {Object.keys(neededKeys)
                       .sort((a, b) => Number(a) - Number(b))
                       .map((cls) => (
@@ -998,7 +1476,7 @@ export default function OMRDashboard() {
                             Max Bal:
                           </span>
                           <span className="font-bold text-indigo-600">
-                            {activeConfigTotalScore}
+                            {Number(activeConfigTotalScore).toFixed(1)}
                           </span>
                         </div>
                       </div>
@@ -1033,6 +1511,7 @@ export default function OMRDashboard() {
                                 subject={subject}
                                 index={index}
                                 handleUpdateSubject={handleUpdateSubject}
+                                handleSegmentConfigUpdate={handleSegmentConfigUpdate}
                                 handleRemoveSubject={handleRemoveSubject}
                               />
                             </SortableSubjectItem>
@@ -1203,7 +1682,7 @@ export default function OMRDashboard() {
                         const variants = neededKeys[cls] || [];
                         const config = configMap[cls] || configMap["default"];
                         const requiredLength = config.reduce(
-                          (acc, curr) => acc + curr.length,
+                          (acc, curr) => acc + (curr.length || 0),
                           0
                         );
 
@@ -1248,6 +1727,16 @@ export default function OMRDashboard() {
                               configMap[activeClass] || configMap["default"]
                             }
                             value={answerKeys[activeClass]?.[variant] || ""}
+                            openWeights={openWeights[activeClass] || {}}
+                            onOpenWeightsChange={(subjectId, weights) => {
+                                setOpenWeights((prev) => ({
+                                    ...prev,
+                                    [activeClass]: {
+                                        ...(prev[activeClass] || {}),
+                                        [subjectId]: weights // Store directly under subjectId
+                                    }
+                                }));
+                            }}
                             onChange={(newValue) => {
                               setAnswerKeys((prev) => ({
                                 ...prev,
@@ -1257,7 +1746,7 @@ export default function OMRDashboard() {
                                 },
                               }));
                             }}
-                          />
+                          /> // <--- Close tag 
                         ))}
                       </div>
                     )}
@@ -1351,7 +1840,7 @@ export default function OMRDashboard() {
                           Yekun
                         </th>
                         {allUniqueSubjects.map((subject) => {
-                          const width = Math.max(100, subject.length * 15);
+                          const width = Math.max(100, (subject.length || 10) * 15);
                           return (
                             <th
                               key={subject.id}

@@ -365,7 +365,7 @@ export const CombinedExamResultPDF: React.FC<CombinedPDFProps> = ({
     config: SubjectConfig[],
     rank?: number
   ) => {
-    const totalQuestions = config.reduce((sum, subj) => sum + subj.length, 0);
+    const totalQuestions = config.reduce((sum, subj) => sum + (subj.length || 0), 0);
     const totalCorrect = config.reduce((sum, subj) => {
       const score = student.scores?.[subj.id] as SubjectScore | undefined;
       return sum + (score?.correct || 0);

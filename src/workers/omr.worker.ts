@@ -3,7 +3,7 @@ import { gradeStudent, GradedStudent } from '../lib/grading';
 
 // Define message types
 type WorkerMessage = 
-  | { type: 'PARSE'; rawText: string; configMap: Record<string, SubjectConfig[]> }
+  | { type: 'PARSE'; rawText: string; configMap: Record<string, SubjectConfig[]>; examType?: string }
   | { type: 'GRADE'; parsedData: ParsedStudent[]; answerKeys: Record<string, Record<string, string>>; configMap: Record<string, SubjectConfig[]> };
 
 type WorkerResponse = 
@@ -17,7 +17,11 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
   try {
     if (type === 'PARSE') {
       const { rawText, configMap } = event.data;
-      const results = parseOMRData(rawText, configMap);
+      // Map UI examType to Parser parseMode
+      const examType = 'examType' in event.data ? event.data.examType : 'unknown';
+      const parseMode = examType === 'buraxilis' ? 'buraxilis' : 'legacy';
+      
+      const results = parseOMRData(rawText, configMap, parseMode);
       self.postMessage({ type: 'PARSE_COMPLETE', data: results });
     } 
     else if (type === 'GRADE') {
