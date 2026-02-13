@@ -4,7 +4,7 @@ import { gradeStudent, GradedStudent } from '../lib/grading';
 // Define message types
 type WorkerMessage = 
   | { type: 'PARSE'; rawText: string; configMap: Record<string, SubjectConfig[]>; examType?: string }
-  | { type: 'GRADE'; parsedData: ParsedStudent[]; answerKeys: Record<string, Record<string, string>>; configMap: Record<string, SubjectConfig[]> };
+  | { type: 'GRADE'; parsedData: ParsedStudent[]; answerKeys: Record<string, Record<string, string>>; configMap: Record<string, SubjectConfig[]>; openWeights?: Record<string, Record<string, number[]>> };
 
 type WorkerResponse = 
   | { type: 'PARSE_COMPLETE'; data: ParsedStudent[] }
@@ -25,7 +25,7 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
       self.postMessage({ type: 'PARSE_COMPLETE', data: results });
     } 
     else if (type === 'GRADE') {
-      const { parsedData, answerKeys, configMap } = event.data;
+      const { parsedData, answerKeys, configMap, openWeights } = event.data;
       
       const gradedResults = parsedData.map(student => {
         if (!student.isValid) return student;
@@ -34,7 +34,10 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
         const key = classKeys ? classKeys[student.variant] : '';
         const config = configMap[student.sinif] || configMap['default'];
         
-        return gradeStudent(student, key || '', config);
+        // Pass class-specific open weights if available
+        const classWeights = openWeights ? openWeights[student.sinif] : undefined;
+        
+        return gradeStudent(student, key || '', config, classWeights);
       });
 
       self.postMessage({ type: 'GRADE_COMPLETE', data: gradedResults });

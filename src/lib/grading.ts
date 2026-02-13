@@ -39,18 +39,18 @@ export const gradeStudent = (student: ParsedStudent, answerKey: string, config: 
       ];
 
       // Dynamic Weight Calculation Logic
-      // The user wants Open Question weights to be calculated automatically to fill the remaining score
+      // The user wants Written Question weights to be calculated automatically to fill the remaining score
       // ensuring the Subject Total matches the config (e.g. 100).
       const subjectTotalPoints = Number(subject.points || 0);
       let usedPoints = 0;
       let totalOpenCount = 0;
 
-      // First pass: Calculate fixed points (Closed/Numeric) and count Open questions
+      // First pass: Calculate fixed points (Closed/Open) and count Written questions
       if (subjectTotalPoints > 0) {
         for (const seg of segments) {
-            if (seg.type === 'closed' || seg.type === 'numeric') {
+            if (seg.type === 'closed' || seg.type === 'open') {
                 usedPoints += (seg.count * Number(seg.points || 0));
-            } else if (seg.type === 'open') {
+            } else if (seg.type === 'written') {
                 totalOpenCount += seg.count;
             }
         }
@@ -105,14 +105,14 @@ export const gradeStudent = (student: ParsedStudent, answerKey: string, config: 
                        // No penalty implemented as per previous instruction
                    }
               } 
-              else if (type === 'numeric') {
+              else if (type === 'open') {
                   // Text comparison of string (e.g. "00123" vs "00123")
                   // Normalize by removing ALL spaces to handle "12  3" vs "123" case
                   const normalizedS = sChunk ? sChunk.replace(/\s/g, '') : '';
                   const normalizedK = kChunk ? kChunk.replace(/\s/g, '') : '';
 
                   if (!key || !normalizedK) {
-                      // No answer key provided for this numeric Q
+                      // No answer key provided for this open Q
                       continue;
                   }
                   
@@ -120,12 +120,17 @@ export const gradeStudent = (student: ParsedStudent, answerKey: string, config: 
                       unanswered++;
                   } else if (normalizedS === normalizedK) {
                       correct++;
-                      subjectNetScore += pointValue;
+                      // Variable Weight Logic for Open Questions
+                      let weight = pointValue;
+                      if (openWeights && openWeights[subject.id] && openWeights[subject.id][q] !== undefined) {
+                          weight = openWeights[subject.id][q];
+                      }
+                      subjectNetScore += weight;
                   } else {
                       incorrect++;
                   }
               }
-              else if (type === 'open') {
+              else if (type === 'written') {
                   // Open question: 1, 2, 3
                   // Score = (Value / 3) * Points (Max Score)
                   // Student writes '1', '2', '3'.
@@ -157,8 +162,8 @@ export const gradeStudent = (student: ParsedStudent, answerKey: string, config: 
                           }
                       }
 
-                      // Max Level is 3 (Standard for Buraxilis Open Questions)
-                      const maxLevel = 3;
+                      // Max Level is 2 (0, 1, 2)
+                      const maxLevel = 2;
                       const scoreCalc = (val / maxLevel) * weight;
                       
                       subjectNetScore += scoreCalc;

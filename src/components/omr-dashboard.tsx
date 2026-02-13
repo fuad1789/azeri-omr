@@ -220,7 +220,7 @@ const SubjectRow = React.memo(
                 {subject.segments.map((seg, i) => (
                     <div key={i} className="grid grid-cols-12 gap-2 items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
                         <div className="col-span-4 text-xs font-semibold text-slate-700 px-2 capitalize">
-                           {seg.type === 'closed' ? 'Qapalı' : seg.type === 'numeric' ? 'Rəqəm' : 'Açıq'}
+                           {seg.type === 'closed' ? 'Qapalı' : seg.type === 'open' ? 'Açıq' : 'Yazı'}
                         </div>
                         <div className="col-span-4 flex justify-center">
                             <input
@@ -237,8 +237,12 @@ const SubjectRow = React.memo(
                                 min={0}
                                 step={0.1}
                                 value={seg.points}
+                                disabled={seg.type === 'written'} // Disable for Written
                                 onChange={(e) => handleSegmentConfigUpdate(index, i, 'points', parseFloat(e.target.value) || 0)}
-                                className="w-16 px-2 py-1 text-center border border-slate-200 rounded text-sm focus:border-indigo-500 outline-none font-mono text-indigo-600"
+                                className={cn(
+                                    "w-16 px-2 py-1 text-center border border-slate-200 rounded text-sm focus:border-indigo-500 outline-none font-mono text-indigo-600",
+                                    seg.type === 'written' && "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                )}
                             />
                         </div>
                     </div>
@@ -413,19 +417,20 @@ const SubjectKeyInputs = ({
                            const segLen = seg.count * seg.lengthPerItem;
                            const segVal = rawSubjectValue.slice(segStart, segStart + segLen);
                            
-                           const label = seg.type === 'closed' ? 'Qapalı' : seg.type === 'numeric' ? 'Rəqəm' : 'Açıq';
+                           const label = seg.type === 'closed' ? 'Qapalı' : seg.type === 'open' ? 'Açıq' : 'Yazı';
                            const showLabel = subject.segments!.length > 1;
                            const inputWidth = Math.max(segLen + 2, 8); // ch
 
                            // Modified: Use Modal for both Numeric AND Open types
-                           if (seg.type === 'numeric' || seg.type === 'open') {
+                            // Case 1: Open OR Written Question Type
+                           if (seg.type === 'open' || seg.type === 'written') {
                                 return (
                                     <div key={segIdx} className="flex flex-col gap-1 w-full flex-1 min-w-[120px]">
                                         {showLabel && <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">{label}</span>}
                                         <button
                                             onClick={() => setEditingSegment({ subjectIndex: subjectIdx, segmentIndex: segIdx })}
                                             className={cn("w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 h-[38px]",
-                                                seg.type === 'open' ? "text-amber-600 bg-amber-50 hover:bg-amber-100 hover:border-amber-300" : "text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300"
+                                                seg.type === 'written' ? "text-amber-600 bg-amber-50 hover:bg-amber-100 hover:border-amber-300" : "text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300"
                                             )}
                                         >
                                             <Key className="w-3 h-3" />
@@ -436,7 +441,7 @@ const SubjectKeyInputs = ({
                                         </span>
                                     </div>
                                 );
-                           }
+                            }
 
                            return (
                                <div key={segIdx} className="flex flex-col gap-1">
@@ -471,13 +476,54 @@ const SubjectKeyInputs = ({
       {editingSegment && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 p-4 animate-in fade-in duration-200">
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200">
-                  <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                       {(() => {
-                           const { subjectIndex, segmentIndex } = editingSegment;
-                           const subject = config[subjectIndex];
-                           const seg = subject.segments![segmentIndex];
-                           return <h3 className="font-bold text-slate-700">{seg.type === 'open' ? 'Açıq Sual Əmsalları' : 'Rəqəm Sualları'}</h3>
-                       })()}
+                   <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                        {(() => {
+                            const { subjectIndex, segmentIndex } = editingSegment;
+                            const subject = config[subjectIndex];
+                            const seg = subject.segments![segmentIndex];
+                            
+                            // Smart Validator Logic
+                            if (seg.type === 'written') {
+                                const currentWeights = (openWeights && openWeights[subject.id]) ? openWeights[subject.id] : [];
+                                
+                                // Calculate Fixed Score (Closed + Numeric)
+                                console.log('segments', subject.segments);
+                                const fixedScore = subject.segments!.reduce((acc, s) => {
+                                    if(s.type === 'closed' || s.type === 'open') {
+                                        return acc + (s.count * s.points);
+                                    }
+                                    return acc;
+                                }, 0);
+                                
+                                const totalTarget = 100; // Assumed Standard
+                                const remainingForOpen = totalTarget - fixedScore;
+                                
+                                // Calculate Current Explicit Total
+                                const currentOpenTotal = currentWeights.reduce((acc, w) => acc + (w || 0), 0);
+                                const finalTotal = fixedScore + currentOpenTotal;
+                                const isOver = finalTotal > totalTarget;
+                                
+                                return (
+                                    <div className="flex flex-col gap-1 w-full mr-8">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="font-bold text-slate-700">Yazı Sual Əmsalları</h3>
+                                            <div className={cn("px-2 py-1 rounded text-xs font-bold border", isOver ? "bg-red-50 text-red-600 border-red-200" : "bg-green-50 text-green-600 border-green-200")}>
+                                                Total: {finalTotal.toFixed(1)} / {totalTarget}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center text-[10px] text-slate-500 gap-3">
+                                            <span>Qapalı/Açıq: <b>{fixedScore}</b></span>
+                                            <span>Yazı Limit: <b>{remainingForOpen}</b></span>
+                                            <span className={isOver ? "text-red-600 font-bold" : "text-slate-700 font-bold"}>
+                                                Siz: {currentOpenTotal.toFixed(1)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )
+                            }
+                            
+                            return <h3 className="font-bold text-slate-700">Açıq Suallar</h3>
+                        })()}
                       <button onClick={() => setEditingSegment(null)} className="text-slate-400 hover:text-slate-600">
                           <X className="w-5 h-5"/>
                       </button>
@@ -490,6 +536,115 @@ const SubjectKeyInputs = ({
                               const seg = subject.segments![segmentIndex];
                               
                               if (seg.type === 'open' && openWeights && onOpenWeightsChange) {
+                                  // Open Question Mode (Weight Input AND Answer Key)
+                                  const currentWeights = openWeights[subject.id] || [];
+                                  
+                                  // Calculate Total Score for Header
+                                  const fixedScore = subject.segments!.reduce((acc, s) => {
+                                    if(s.type === 'closed') {
+                                        return acc + (s.count * s.points);
+                                    }
+                                    return acc;
+                                  }, 0);
+
+                                  const totalTarget = 100; 
+                                  const currentOpenTotal = currentWeights.reduce((a, b) => a + b, 0);
+                                  
+                                  const effectiveOpenTotal = currentWeights.length > 0 
+                                     ? currentOpenTotal 
+                                     : (seg.count * seg.points);
+
+                                   const finalTotal = fixedScore + effectiveOpenTotal;
+                                  
+                                  const isOver = finalTotal > totalTarget + 0.5;
+
+                                  // Calculate Offsets Inline
+                                  let subjectStart = 0;
+                                  for(let i=0; i<subjectIndex; i++) subjectStart += (config[i].length || 0);
+                                  
+                                  let segmentStart = 0;
+                                  for(let k=0; k<segmentIndex; k++) {
+                                       const s = subject.segments![k];
+                                       if (s) segmentStart += s.count * s.lengthPerItem;
+                                  }
+                                  const segmentGlobalStart = subjectStart + segmentStart;
+
+                                  const renderList = [];
+                                  for(let i=0; i<seg.count; i++) {
+                                      const itemGlobalStart = segmentGlobalStart + (i * seg.lengthPerItem);
+                                      const itemVal = (value || "").slice(itemGlobalStart, itemGlobalStart + seg.lengthPerItem).trim();
+                                      const weight = currentWeights[i] !== undefined ? currentWeights[i] : seg.points;
+
+                                      renderList.push(
+                                         <div key={i} className="flex items-center gap-2 mb-2 p-2 bg-white border border-slate-100 rounded-lg shadow-sm">
+                                             <span className="w-20 text-xs font-bold text-slate-400">SUAL {i+1}</span>
+                                             
+                                             <input
+                                                 type="text"
+                                                 maxLength={seg.lengthPerItem}
+                                                 value={itemVal}
+                                                 onChange={(e) => {
+                                                     const newVal = e.target.value.padEnd(seg.lengthPerItem, ' ').slice(0, seg.lengthPerItem); 
+                                                     const currentFull = (value || "").padEnd(segmentGlobalStart + (seg.count * seg.lengthPerItem), ' ');
+                                                     const pre = currentFull.slice(0, itemGlobalStart);
+                                                     const post = currentFull.slice(itemGlobalStart + seg.lengthPerItem);
+                                                     onChange(pre + newVal + post);
+                                                 }}
+                                                 className="flex-1 px-3 py-2 border border-slate-200 rounded text-sm font-mono tracking-widest focus:border-indigo-500 outline-none uppercase"
+                                                 placeholder="_____"
+                                             />
+                                             
+                                              {openWeights && onOpenWeightsChange && (
+                                                 <div className="flex items-center gap-1 relative group">
+                                                     <span className="text-[9px] text-slate-300 absolute -top-2 left-0 w-full text-center">Bal</span>
+                                                     <input
+                                                         type="number"
+                                                         step={0.1}
+                                                         min={0}
+                                                         value={weight}
+                                                         onChange={(e) => {
+                                                             const val = parseFloat(e.target.value);
+                                                             if (isNaN(val)) return;
+                                                             const newWeights = [...currentWeights];
+                                                             if (newWeights.length === 0) {
+                                                                 for(let k=0; k<seg.count; k++) newWeights[k] = seg.points;
+                                                             }
+                                                             newWeights[i] = val;
+                                                             onOpenWeightsChange(subject.id, newWeights);
+                                                         }}
+                                                         className="w-20 px-2 py-2 border border-amber-200 bg-amber-50 text-amber-700 rounded text-sm font-bold text-center focus:border-amber-500 outline-none"
+                                                     />
+                                                 </div>
+                                              )}
+                                         </div>
+                                      );
+                                  }
+
+                                  return (
+                                      <div className="flex flex-col gap-4">
+                                          <div className="flex flex-col gap-1 w-full mr-8">
+                                              <div className="flex items-center justify-between">
+                                                  <h3 className="font-bold text-slate-700">Açıq Sual Əmsalları</h3>
+                                                  <div className={cn("px-2 py-1 rounded text-xs font-bold border", isOver ? "bg-red-50 text-red-600 border-red-200" : "bg-green-50 text-green-600 border-green-200")}>
+                                                      Total: {finalTotal.toFixed(1)} / {totalTarget}
+                                                  </div>
+                                              </div>
+                                              <div className="flex items-center text-[10px] text-slate-500 gap-3">
+                                                  <span>Qapalı: <b>{fixedScore}</b></span>
+                                                  <span>Açıq Limit: <b>{totalTarget - fixedScore}</b></span>
+                                                  <span className={isOver ? "text-red-600 font-bold" : "text-slate-700 font-bold"}>
+                                                      Siz: {currentOpenTotal.toFixed(1)}
+                                                  </span>
+                                              </div>
+                                          </div>
+                                          <div>
+                                            {renderList}
+                                          </div>
+                                      </div>
+                                  )
+                              }
+                              
+                              if (seg.type === 'written' && openWeights && onOpenWeightsChange) {
                                   // Open Question Mode (Weight Input)
                                   const currentWeights = openWeights[subject.id] || [];
                                   
@@ -695,7 +850,7 @@ const TableRow = React.memo(
                                      )
                                  });
                              } 
-                             else if (seg.type === 'numeric') {
+                             else if (seg.type === 'open') {
                                  // Render chunks of 5
                                  const answers: React.ReactNode[] = [];
                                  for(let i=0; i<seg.count; i++) {
@@ -714,7 +869,7 @@ const TableRow = React.memo(
                                  }
                                  return answers;
                              }
-                             else if (seg.type === 'open') {
+                             else if (seg.type === 'written') {
                                  // Render scores
                                  const answers: React.ReactNode[] = [];
                                  for(let i=0; i<seg.count; i++) {
@@ -1349,23 +1504,6 @@ export default function OMRDashboard() {
           </div>
           
           <div className="flex items-center gap-4">
-             {/* Exam Type Selector */}
-             <div className="bg-white rounded-lg border border-slate-200 p-1 flex">
-                 <button 
-                    onClick={() => setExamType('standard')}
-                    className={cn("px-3 py-1.5 rounded-md text-sm font-medium transition-colors", 
-                        examType === 'standard' ? "bg-indigo-100 text-indigo-700" : "text-slate-500 hover:text-slate-700")}
-                 >
-                     Fənn İmtahanı
-                 </button>
-                 <button 
-                    onClick={() => setExamType('buraxilis')}
-                    className={cn("px-3 py-1.5 rounded-md text-sm font-medium transition-colors", 
-                        examType === 'buraxilis' ? "bg-indigo-100 text-indigo-700" : "text-slate-500 hover:text-slate-700")}
-                 >
-                     Buraxılış İmtahanı
-                 </button>
-             </div>
 
               <button
                 onClick={() => setIsConfigOpen(true)}
@@ -1618,6 +1756,24 @@ export default function OMRDashboard() {
                     <span className="truncate">{fileName}</span>
                   </div>
                 )}
+              </div>
+
+              {/* Exam Type Selector */}
+              <div className="bg-white rounded-xl border border-slate-200 p-1 flex shadow-sm">
+                 <button 
+                    onClick={() => setExamType('standard')}
+                    className={cn("flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all text-center", 
+                        examType === 'standard' ? "bg-indigo-100 text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50")}
+                 >
+                     Fənn İmtahanı
+                 </button>
+                 <button 
+                    onClick={() => setExamType('buraxilis')}
+                    className={cn("flex-1 px-2 py-2 rounded-lg text-xs font-bold transition-all text-center", 
+                        examType === 'buraxilis' ? "bg-indigo-100 text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50")}
+                 >
+                     Buraxılış İmtahanı
+                 </button>
               </div>
 
               {!parsedData && (

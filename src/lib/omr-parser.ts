@@ -22,10 +22,10 @@ export interface ParsedStudent {
 
 
 export interface SubjectSegment {
-    type: 'closed' | 'numeric' | 'open';
+    type: 'closed' | 'open' | 'written';
     count: number;
     points: number; // For 'open', this is the weight multiplier
-    lengthPerItem: number; // 1 for closed/open, 5 for numeric
+    lengthPerItem: number; // 1 for closed/written, 5 for open
 }
 
 export interface SubjectConfig {
@@ -122,50 +122,121 @@ CLASS_CONFIGS['8'] = CLASS_CONFIGS['08'];
 // --- BURAXILIS IMTAHANI CONFIGURATIONS ---
 
 // Helper to create Buraxilis configs
-const createBuraxilisConfig = (lang: 'az' | 'en' | 'ru'): SubjectConfig[] => [
-    { 
-        ...SUB_AZ_BASE, 
-        // 25 Closed + 10 Open = 35 items
-        // Length chars: 25 + 10 = 35 chars
-        length: 35, 
-        points: 100, // Placeholder
-        segments: [
-            { type: 'closed', count: 25, points: 2, lengthPerItem: 1 }, 
-            { type: 'open', count: 10, points: 5, lengthPerItem: 1 }, 
-        ]
-    },
-    { 
-        ...SUB_MATH_BASE, 
-        // 15 Closed + 4 Numeric (5 chars) + 5 Open = 24 items
-        // Length chars: 15 + (4*5) + 5 = 40 chars
-        length: 40,
-        points: 100,
-        segments: [
-            { type: 'closed', count: 15, points: 2, lengthPerItem: 1 },
-            { type: 'numeric', count: 4, points: 5, lengthPerItem: 5 },
-            { type: 'open', count: 5, points: 10, lengthPerItem: 1 },
-        ]
-    },
-    { 
-        ...SUB_ENG_BASE, 
-        name: lang === 'ru' ? 'Xarici Dil (Rus)' : 'Xarici Dil (İngilis)',
-        // 15 Closed + 3 Numeric (5 chars) + 4 Open = 22 items
-        // Length chars: 15 + (3*5) + 4 = 34 chars
-        length: 34,
-        points: 100,
-        segments: [
-             { type: 'closed', count: 15, points: 2, lengthPerItem: 1 },
-             { type: 'numeric', count: 3, points: 5, lengthPerItem: 5 },
-             { type: 'open', count: 4, points: 13.75, lengthPerItem: 1 },
-        ]
+const createBuraxilisConfig = (grade: '9' | '10' | '11'): SubjectConfig[] => {
+    // Grade 9 (and 8)
+    if (grade === '9') {
+        return [
+            { 
+                ...SUB_AZ_BASE, 
+                length: 30, // 26 + 4
+                points: 100, 
+                segments: [
+                    { type: 'closed', count: 26, points: 2, lengthPerItem: 1 }, 
+                    { type: 'written', count: 4, points: 12, lengthPerItem: 1 }, 
+                ]
+            },
+            { 
+                ...SUB_MATH_BASE, 
+                length: 25, // 15 + 6 + 4
+                points: 100,
+                segments: [
+                    { type: 'closed', count: 15, points: 2, lengthPerItem: 1 },
+                    { type: 'open', count: 6, points: 5, lengthPerItem: 5 },
+                    { type: 'written', count: 4, points: 10, lengthPerItem: 1 },
+                ]
+            },
+            { 
+                ...SUB_ENG_BASE, 
+                length: 26, // 22 + 2 + 2
+                points: 100,
+                segments: [
+                     { type: 'closed', count: 22, points: 2, lengthPerItem: 1 },
+                     { type: 'open', count: 2, points: 5, lengthPerItem: 5 },
+                     { type: 'written', count: 2, points: 13, lengthPerItem: 1 },
+                ]
+            }
+        ];
     }
-];
+
+    // Grade 10
+    if (grade === '10') {
+        return [
+            { 
+                ...SUB_AZ_BASE, 
+                length: 30, // 20 + 10
+                points: 100, 
+                segments: [
+                    { type: 'closed', count: 20, points: 2, lengthPerItem: 1 }, 
+                    { type: 'written', count: 10, points: 6, lengthPerItem: 1 }, 
+                ]
+            },
+            { 
+                ...SUB_MATH_BASE, 
+                length: 25, // 13 + 5 + 7
+                points: 100,
+                segments: [
+                    { type: 'closed', count: 13, points: 2, lengthPerItem: 1 },
+                    { type: 'open', count: 5, points: 5, lengthPerItem: 5 },
+                    { type: 'written', count: 7, points: 7, lengthPerItem: 1 },
+                ]
+            },
+            { 
+                ...SUB_ENG_BASE, 
+                length: 26, // 22 + 2 + 2
+                points: 100,
+                segments: [
+                     { type: 'closed', count: 22, points: 2, lengthPerItem: 1 },
+                     { type: 'open', count: 2, points: 5, lengthPerItem: 5 },
+                     { type: 'written', count: 2, points: 13, lengthPerItem: 1 },
+                ]
+            }
+        ];
+    }
+
+    // Grade 11
+    if (grade === '11') {
+        return [
+            { 
+                ...SUB_AZ_BASE, 
+                length: 30, // 20 + 10
+                points: 100, 
+                segments: [
+                    { type: 'closed', count: 20, points: 2, lengthPerItem: 1 }, 
+                    { type: 'written', count: 10, points: 6, lengthPerItem: 1 }, 
+                ]
+            },
+            { 
+                ...SUB_MATH_BASE, 
+                length: 25, // 13 + 5 + 7
+                points: 100,
+                segments: [
+                    { type: 'closed', count: 13, points: 2, lengthPerItem: 1 },
+                    { type: 'open', count: 5, points: 5, lengthPerItem: 5 },
+                    { type: 'written', count: 7, points: 7, lengthPerItem: 1 },
+                ]
+            },
+            { 
+                ...SUB_ENG_BASE, 
+                length: 30, // 23 + 7
+                points: 100,
+                segments: [
+                     { type: 'closed', count: 23, points: 2, lengthPerItem: 1 },
+                     { type: 'written', count: 7, points: 7.7, lengthPerItem: 1 },
+                ]
+            }
+        ];
+    }
+    
+    return [];
+};
 
 export const BURAXILIS_CONFIGS: Record<string, SubjectConfig[]> = {
-    '09': createBuraxilisConfig('en'),
-    '10': createBuraxilisConfig('en'),
-    '11': createBuraxilisConfig('en'),
-    '9': createBuraxilisConfig('en'), // Single digit support
+    '08': createBuraxilisConfig('9'), // 8th same as 9th
+    '09': createBuraxilisConfig('9'),
+    '10': createBuraxilisConfig('10'),
+    '11': createBuraxilisConfig('11'),
+    '8': createBuraxilisConfig('9'),
+    '9': createBuraxilisConfig('9'), 
 };
 
 export const DEFAULT_SUBJECT_CONFIG: SubjectConfig[] = CLASS_CONFIGS['02']; 
@@ -282,51 +353,91 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
         // Data Layers
         // Start at 34
         const DATA_START = 34;
-        
-        // Define Layer Lengths (Verified)
-        const LEN_L1_CLOSED = 55; // Az(25) + Math(15) + Eng(15)
-        const LEN_L2_NUMERIC = 35; // Eng(15) + Math(20)
-        const LEN_L3_OPEN = 19;    // Az(10) + Math(5) + Eng(4)
-
-        const rawData = line.slice(DATA_START).padEnd(200, ' ');
-        
-        let ptr = 0;
-        const layer1Str = rawData.slice(ptr, ptr + LEN_L1_CLOSED); 
-        ptr += LEN_L1_CLOSED;
-        
-        const layer2Str = rawData.slice(ptr, ptr + LEN_L2_NUMERIC); 
-        ptr += LEN_L2_NUMERIC;
-        
-        const layer3Str = rawData.slice(ptr, ptr + LEN_L3_OPEN);
-        ptr += LEN_L3_OPEN;
-
-        // Config Mapping
         const activeConfig = configMap[student.sinif || '09'] || configMap['09']; 
         const subAz = activeConfig[0];
         const subMath = activeConfig[1];
         const subEng = activeConfig[2];
 
-        // L1 Distribution
-        const l1_Az = 25;
-        const l1_Math = 15;
-        const l1_Eng = 15;
+        // Dynamic Calculation of Layer Lengths based on Config
+        // Layer 1: Closed Questions
+        let L1_Total = 0;
+        let l1_Az = 0;
+        let l1_Math = 0;
+        let l1_Eng = 0;
+
+        // Layer 2: Open Questions (was Numeric)
+        let L2_Total = 0;
+        let l2_Az = 0;
+        let l2_Math = 0;
+        let l2_Eng = 0;
+
+        // Layer 3: Written Questions (was Open)
+        let L3_Total = 0;
+        let l3_Az = 0;
+        let l3_Math = 0;
+        let l3_Eng = 0;
+
+        // Helper to extract counts
+        const extractCounts = (subj: SubjectConfig) => {
+            let closed = 0;
+            let open = 0; // Length 5
+            let written = 0; // Length 1
+
+            if (subj.segments) {
+                subj.segments.forEach(seg => {
+                    if (seg.type === 'closed') closed += seg.count;
+                    if (seg.type === 'open') open += seg.count;
+                    if (seg.type === 'written') written += seg.count;
+                });
+            }
+            return { closed, open, written };
+        };
+
+        const azCounts = extractCounts(subAz);
+        l1_Az = azCounts.closed;
+        l2_Az = azCounts.open * 5; // 5 chars per item
+        l3_Az = azCounts.written;
+
+        const mathCounts = extractCounts(subMath);
+        l1_Math = mathCounts.closed;
+        l2_Math = mathCounts.open * 5;
+        l3_Math = mathCounts.written;
+
+        const engCounts = extractCounts(subEng);
+        l1_Eng = engCounts.closed;
+        l2_Eng = engCounts.open * 5;
+        l3_Eng = engCounts.written;
+
+        L1_Total = l1_Az + l1_Math + l1_Eng;
+        L2_Total = l2_Az + l2_Math + l2_Eng;
+        L3_Total = l3_Az + l3_Math + l3_Eng;
+
+        // Slicing
+        const rawData = line.slice(DATA_START).padEnd(200, ' ');
         
+        let ptr = 0;
+        const layer1Str = rawData.slice(ptr, ptr + L1_Total); 
+        ptr += L1_Total;
+        
+        const layer2Str = rawData.slice(ptr, ptr + L2_Total); 
+        ptr += L2_Total;
+        
+        const layer3Str = rawData.slice(ptr, ptr + L3_Total);
+        ptr += L3_Total;
+
+        // L1 Distribution (Az -> Math -> Eng)
         const l1_Az_Str = layer1Str.slice(0, l1_Az);
         const l1_Math_Str = layer1Str.slice(l1_Az, l1_Az + l1_Math);
         const l1_Eng_Str = layer1Str.slice(l1_Az + l1_Math, l1_Az + l1_Math + l1_Eng);
 
-        // L2 Distribution (Eng THEN Math)
-        const l2_Eng = 15; // 3 * 5
-        const l2_Math = 20; // 4 * 5
-        
-        const l2_Eng_Str = layer2Str.slice(0, l2_Eng);
-        const l2_Math_Str = layer2Str.slice(l2_Eng, l2_Eng + l2_Math);
+        // L2 Distribution (Dynamic based on Config Order: Az -> Math -> Eng)
 
-        // L3 Distribution
-        const l3_Az = 10;
-        const l3_Math = 5;
-        const l3_Eng = 4;
         
+        const l2_Az_Str = layer2Str.slice(0, l2_Az);
+        const l2_Math_Str = layer2Str.slice(l2_Az, l2_Az + l2_Math);
+        const l2_Eng_Str = layer2Str.slice(l2_Az + l2_Math, l2_Az + l2_Math + l2_Eng);
+
+        // L3 Distribution (Az -> Math -> Eng)
         const l3_Az_Str = layer3Str.slice(0, l3_Az);
         const l3_Math_Str = layer3Str.slice(l3_Az, l3_Az + l3_Math);
         const l3_Eng_Str = layer3Str.slice(l3_Az + l3_Math, l3_Az + l3_Math + l3_Eng);
@@ -334,13 +445,13 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
         // Construct Subjects
         const subjects: Record<string, string> = {};
 
-        // Az: Closed + Open
-        subjects[subAz.id] = l1_Az_Str + l3_Az_Str;
+        // Az: Closed + Open + Written
+        subjects[subAz.id] = l1_Az_Str + l2_Az_Str + l3_Az_Str;
 
-        // Math: Closed + Numeric + Open
+        // Math: Closed + Open + Written
         subjects[subMath.id] = l1_Math_Str + l2_Math_Str + l3_Math_Str;
 
-        // Eng: Closed + Numeric + Open
+        // Eng: Closed + Open + Written
         subjects[subEng.id] = l1_Eng_Str + l2_Eng_Str + l3_Eng_Str;
 
         student = { 
