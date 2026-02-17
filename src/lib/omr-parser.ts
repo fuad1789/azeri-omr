@@ -125,12 +125,12 @@ CLASS_CONFIGS['8'] = CLASS_CONFIGS['08'];
 export const BURAXILIS_LAYOUT = [
     { subject: 'az', type: 'closed', length: 20 },
     { subject: 'math', type: 'closed', length: 13 },
-    { subject: 'eng', type: 'closed', length: 23 }, // Updated to 23 per user request
+    { subject: 'eng', type: 'closed', length: 22 }, // Grade 10: 22 Closed
     { subject: 'math', type: 'open', count: 5, lengthPerItem: 5 },
-    { subject: 'eng', type: 'open', count: 2, lengthPerItem: 5 },
+    { subject: 'eng', type: 'open', count: 2, lengthPerItem: 5 }, // Grade 10: 2 Open
     { subject: 'az', type: 'written', length: 10 },
     { subject: 'math', type: 'written', length: 7 },
-    { subject: 'eng', type: 'written', length: 2 }
+    { subject: 'eng', type: 'written', length: 2 } // Grade 10: 2 Written
 ];
 
 // Grade 11 Specific Layout (Based on user file analysis)
@@ -145,8 +145,22 @@ export const BURAXILIS_LAYOUT_11 = [
     { subject: 'eng', type: 'written', length: 7 } // Updated to 7 per user request 
 ];
 
+// Grade 8-9 Specific Layout
+export const BURAXILIS_LAYOUT_9 = [
+    { subject: 'az', type: 'closed', length: 26 },
+    { subject: 'math', type: 'closed', length: 15 },
+    { subject: 'eng', type: 'closed', length: 22 },
+    { subject: 'math', type: 'open', count: 6, lengthPerItem: 5 },
+    { subject: 'eng', type: 'open', count: 2, lengthPerItem: 5 },
+    { subject: 'az', type: 'written', length: 4 },
+    { subject: 'math', type: 'written', length: 4 },
+    { subject: 'eng', type: 'written', length: 2 }
+];
+
 export const getBuraxilisLayout = (grade: string) => {
-    return grade === '11' ? BURAXILIS_LAYOUT_11 : BURAXILIS_LAYOUT;
+    if (grade === '11') return BURAXILIS_LAYOUT_11;
+    if (grade === '8' || grade === '9' || grade === '08' || grade === '09') return BURAXILIS_LAYOUT_9;
+    return BURAXILIS_LAYOUT; // Grade 10 default
 };
 
 // Helper to create Buraxilis configs
@@ -159,7 +173,7 @@ const createBuraxilisConfig = (grade: '9' | '10' | '11'): SubjectConfig[] => {
         layout.filter(l => l.subject === subj).forEach(l => {
              if (l.type === 'closed') segs.push({ type: 'closed', count: l.length!, points: 2, lengthPerItem: 1 });
              if (l.type === 'open') segs.push({ type: 'open', count: l.count!, points: 5, lengthPerItem: 5 });
-             if (l.type === 'written') segs.push({ type: 'written', count: l.length!, points: l.subject === 'az' ? 10 : (l.subject==='math'?7:2), lengthPerItem: 1 });
+             if (l.type === 'written') segs.push({ type: 'written', count: l.length!, points: l.subject === 'az' ? 10 : (l.subject==='math'?7:l.length!), lengthPerItem: 1 });
         });
         return segs;
     };
