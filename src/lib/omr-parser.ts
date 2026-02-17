@@ -137,12 +137,12 @@ export const BURAXILIS_LAYOUT = [
 export const BURAXILIS_LAYOUT_11 = [
     { subject: 'az', type: 'closed', length: 20 },
     { subject: 'math', type: 'closed', length: 13 },
-    { subject: 'eng', type: 'closed', length: 23 }, // Updated to 23 per user request
-    { subject: 'math', type: 'open', count: 5, lengthPerItem: 5 },
-    { subject: 'eng', type: 'open', count: 2, lengthPerItem: 5 }, // Observed 2 cols (14, 34)
+    { subject: 'eng', type: 'closed', length: 23 }, 
+    { subject: 'math', type: 'open', count: 5, lengthPerItem: 5 }, // 5 questions as per user request
+    // { subject: 'skip', type: 'open', count: 2, lengthPerItem: 5 }, // REMOVED as per user instruction (data starts immediately)
     { subject: 'az', type: 'written', length: 10 },
     { subject: 'math', type: 'written', length: 7 },
-    { subject: 'eng', type: 'written', length: 2 } // Observed 2 chars (01)
+    { subject: 'eng', type: 'written', length: 7 } // Updated to 7 per user request 
 ];
 
 export const getBuraxilisLayout = (grade: string) => {
@@ -295,115 +295,43 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
         const sinif = line.slice(28, 30).trim();
         const qrup = line.slice(30, 31).trim();
         const dil = line.slice(31, 32).trim();
-        
-        // Variant is not explicitly in the header range [28-32] for this format.
-        // Defaulting to 'A' as most Buraxilis exams use a single variant or it's handled via Answer Key matching.
-        const variant = 'A'; 
-        const bolme = '';
+        const variant = line.slice(32, 33).trim(); // User confirmed: 33 (1-based) -> 32 index
+        const bolme = line.slice(33, 34).trim();   // User confirmed: 34 (1-based) -> 33 index
         
         // Data Layers
-        // Start at 32 (After "101R" which ends at 32)
-        const DATA_START = 32;
-        const activeConfig = configMap[student.sinif || '09'] || configMap['09']; 
-        const subAz = activeConfig[0];
-        const subMath = activeConfig[1];
-        const subEng = activeConfig[2];
-
-        // Dynamic Calculation of Layer Lengths based on Config
-        // Layer 1: Closed Questions
-        let L1_Total = 0;
-        let l1_Az = 0;
-        let l1_Math = 0;
-        let l1_Eng = 0;
-
-        // Layer 2: Open Questions (was Numeric)
-        let L2_Total = 0;
-        let l2_Az = 0;
-        let l2_Math = 0;
-        let l2_Eng = 0;
-
-        // Layer 3: Written Questions (was Open)
-        let L3_Total = 0;
-        let l3_Az = 0;
-        let l3_Math = 0;
-        let l3_Eng = 0;
-
-        // Helper to extract counts
-        const extractCounts = (subj: SubjectConfig) => {
-            let closed = 0;
-            let open = 0; // Length 5
-            let written = 0; // Length 1
-
-            if (subj.segments) {
-                subj.segments.forEach(seg => {
-                    if (seg.type === 'closed') closed += seg.count;
-                    if (seg.type === 'open') open += seg.count;
-                    if (seg.type === 'written') written += seg.count;
-                });
-            }
-            return { closed, open, written };
+        // Start at 34 (User confirmed: 35 (1-based) -> 34 index)
+        const DATA_START = 34;
+        
+        // Use Global Layout Strategy directly for parsing
+        const layout = getBuraxilisLayout(student.sinif || '09');
+        let currentPtr = DATA_START;
+        
+        // Initialize subject strings
+        const subjects: Record<string, string> = {
+            'az': '',
+            'math': '',
+            'eng': ''
         };
 
-        const azCounts = extractCounts(subAz);
-        l1_Az = azCounts.closed;
-        l2_Az = azCounts.open * 5; // 5 chars per item
-        l3_Az = azCounts.written;
+        // Iterate Layout to Scatter Data
+        for (const block of layout) {
+            const len = block.length || (block.count! * block.lengthPerItem!);
+            const chunk = line.slice(currentPtr, currentPtr + len).padEnd(len, ' '); // Pad if line ends early
+            currentPtr += len;
 
-        const mathCounts = extractCounts(subMath);
-        l1_Math = mathCounts.closed;
-        l2_Math = mathCounts.open * 5;
-        l3_Math = mathCounts.written;
+            if (block.subject !== 'skip' && subjects[block.subject] !== undefined) {
+                subjects[block.subject] += chunk;
+            }
+        }
 
-        const engCounts = extractCounts(subEng);
-        l1_Eng = engCounts.closed;
-        l2_Eng = engCounts.open * 5;
-        l3_Eng = engCounts.written;
-
-        L1_Total = l1_Az + l1_Math + l1_Eng;
-        L2_Total = l2_Az + l2_Math + l2_Eng;
-        L3_Total = l3_Az + l3_Math + l3_Eng;
-
-        // Slicing
-        const rawData = line.slice(DATA_START).padEnd(200, ' ');
-        
-        let ptr = 0;
-        const layer1Str = rawData.slice(ptr, ptr + L1_Total); 
-        ptr += L1_Total;
-        
-        const layer2Str = rawData.slice(ptr, ptr + L2_Total); 
-        ptr += L2_Total;
-        
-        const layer3Str = rawData.slice(ptr, ptr + L3_Total);
-        ptr += L3_Total;
-
-        // L1 Distribution (Az -> Math -> Eng)
-        const l1_Az_Str = layer1Str.slice(0, l1_Az);
-        const l1_Math_Str = layer1Str.slice(l1_Az, l1_Az + l1_Math);
-        const l1_Eng_Str = layer1Str.slice(l1_Az + l1_Math, l1_Az + l1_Math + l1_Eng);
-
-        // L2 Distribution (Dynamic based on Config Order: Az -> Math -> Eng)
-
-        
-        const l2_Az_Str = layer2Str.slice(0, l2_Az);
-        const l2_Math_Str = layer2Str.slice(l2_Az, l2_Az + l2_Math);
-        const l2_Eng_Str = layer2Str.slice(l2_Az + l2_Math, l2_Az + l2_Math + l2_Eng);
-
-        // L3 Distribution (Az -> Math -> Eng)
-        const l3_Az_Str = layer3Str.slice(0, l3_Az);
-        const l3_Math_Str = layer3Str.slice(l3_Az, l3_Az + l3_Math);
-        const l3_Eng_Str = layer3Str.slice(l3_Az + l3_Math, l3_Az + l3_Math + l3_Eng);
-
-        // Construct Subjects
-        const subjects: Record<string, string> = {};
-
-        // Az: Closed + Open + Written
-        subjects[subAz.id] = l1_Az_Str + l2_Az_Str + l3_Az_Str;
-
-        // Math: Closed + Open + Written
-        subjects[subMath.id] = l1_Math_Str + l2_Math_Str + l3_Math_Str;
-
-        // Eng: Closed + Open + Written
-        subjects[subEng.id] = l1_Eng_Str + l2_Eng_Str + l3_Eng_Str;
+        // Map back to Config IDs (legacy support for grading)
+        // configMap keys are usually indices or 'default', but grading uses subject.id
+        // We need to map 'az' -> 'azDili', 'math' -> 'riyaziyyat', 'eng' -> 'xariciDil'
+        // based on the standard IDs defined at top of file.
+        const mappedSubjects: Record<string, string> = {};
+        mappedSubjects['azDili'] = subjects['az'];
+        mappedSubjects['riyaziyyat'] = subjects['math'];
+        mappedSubjects['xariciDil'] = subjects['eng'];
 
         student = { 
             ad, soyad, ataAdi: '', 
@@ -415,7 +343,7 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
         if (!student.isNomresi) return createErrorRecord(line, "Missing Student ID");
         
         // IMPORTANT: Concatenate in Config Order for Grading
-        const sequentialAnswerString = subjects[subAz.id] + subjects[subMath.id] + subjects[subEng.id];
+        const sequentialAnswerString = mappedSubjects['azDili'] + mappedSubjects['riyaziyyat'] + mappedSubjects['xariciDil'];
 
         return {
             id: crypto.randomUUID(),

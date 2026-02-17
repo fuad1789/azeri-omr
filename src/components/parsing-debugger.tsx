@@ -16,7 +16,7 @@ export const ParsingDebugger = ({ rawText }: { rawText: string }) => {
     
     // Use first valid line for debug
     const firstLine = lines[0];
-    const DATA_START = 32; // Sync with parser logic
+    const DATA_START = 34; // Sync with parser logic (User confirmed 35 1-based start)
 
     // Detect Grade from Header (28-30)
     const grade = firstLine.slice(28, 30).trim();
@@ -32,6 +32,8 @@ export const ParsingDebugger = ({ rawText }: { rawText: string }) => {
         { name: 'Sinif', start: 28, end: 30, color: 'bg-indigo-50 text-indigo-700 border-indigo-200 font-bold' },
         { name: 'Qrup', start: 30, end: 31, color: 'bg-purple-50 text-purple-700 border-purple-200' },
         { name: 'Dil', start: 31, end: 32, color: 'bg-green-50 text-green-700 border-green-200' },
+        { name: 'Var', start: 32, end: 33, color: 'bg-pink-50 text-pink-700 border-pink-200 font-bold' },
+        { name: 'Böl', start: 33, end: 34, color: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
     ].map(b => ({
         ...b,
         content: firstLine.slice(b.start, b.end),
@@ -77,13 +79,13 @@ export const ParsingDebugger = ({ rawText }: { rawText: string }) => {
                     {/* Spacer removed for correct alignment */}
                     {firstLine.split('').map((_, i) => (
                         <div key={i} className="w-[12px] border-r border-transparent text-center text-[8px] text-slate-400 rotate-90 origin-bottom transform translate-y-2">
-                            {i}
+                            {i + 1}
                         </div>
                     ))}
                 </div>
 
                 {/* Raw Line Character Boxes */}
-                <div className="flex w-max border-b border-t border-slate-100 py-1 ml-[7px]">
+                <div className="flex w-max border-b border-t border-slate-100 py-1 ml-[2px]">
                      {firstLine.split('').map((char, i) => (
                         <div key={i} className={cn(
                             "w-[12px] h-[24px] flex items-center justify-center border-r border-slate-50",
@@ -104,7 +106,7 @@ export const ParsingDebugger = ({ rawText }: { rawText: string }) => {
                             key={idx}
                             className={cn("absolute h-8 top-0 border flex flex-col items-center justify-center text-[9px] overflow-hidden whitespace-nowrap px-1", block.color)}
                             style={{ left: `${block.start * 12}px`, width: `${(block.end - block.start) * 12}px` }}
-                            title={`${block.name} ${block.type} (${block.start}-${block.end})`}
+                            title={`${block.name} ${block.type} (${block.start + 1}-${block.end})`}
                         >
                             <span className="font-bold">{block.name}</span>
                             {/* Only show type for data blocks to save space */}
@@ -127,7 +129,7 @@ export const ParsingDebugger = ({ rawText }: { rawText: string }) => {
                                      {block.type}
                                  </div>
                                  <div className="md:col-span-2 font-mono text-xs text-slate-400 text-center">
-                                     {block.start} - {block.end}
+                                     {block.start + 1} - {block.end}
                                  </div>
                                  <div className="md:col-span-6 font-mono text-sm text-slate-900 bg-white px-3 py-1.5 rounded border border-slate-200 break-all shadow-sm">
                                      {block.content}
