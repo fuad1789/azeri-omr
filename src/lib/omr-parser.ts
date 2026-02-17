@@ -121,117 +121,65 @@ CLASS_CONFIGS['8'] = CLASS_CONFIGS['08'];
 
 // --- BURAXILIS IMTAHANI CONFIGURATIONS ---
 
+// Buraxilis Layout Definition (Default / Grade 9-10)
+export const BURAXILIS_LAYOUT = [
+    { subject: 'az', type: 'closed', length: 20 },
+    { subject: 'math', type: 'closed', length: 13 },
+    { subject: 'eng', type: 'closed', length: 23 }, // Updated to 23 per user request
+    { subject: 'math', type: 'open', count: 5, lengthPerItem: 5 },
+    { subject: 'eng', type: 'open', count: 2, lengthPerItem: 5 },
+    { subject: 'az', type: 'written', length: 10 },
+    { subject: 'math', type: 'written', length: 7 },
+    { subject: 'eng', type: 'written', length: 2 }
+];
+
+// Grade 11 Specific Layout (Based on user file analysis)
+export const BURAXILIS_LAYOUT_11 = [
+    { subject: 'az', type: 'closed', length: 20 },
+    { subject: 'math', type: 'closed', length: 13 },
+    { subject: 'eng', type: 'closed', length: 23 }, // Updated to 23 per user request
+    { subject: 'math', type: 'open', count: 5, lengthPerItem: 5 },
+    { subject: 'eng', type: 'open', count: 2, lengthPerItem: 5 }, // Observed 2 cols (14, 34)
+    { subject: 'az', type: 'written', length: 10 },
+    { subject: 'math', type: 'written', length: 7 },
+    { subject: 'eng', type: 'written', length: 2 } // Observed 2 chars (01)
+];
+
+export const getBuraxilisLayout = (grade: string) => {
+    return grade === '11' ? BURAXILIS_LAYOUT_11 : BURAXILIS_LAYOUT;
+};
+
 // Helper to create Buraxilis configs
 const createBuraxilisConfig = (grade: '9' | '10' | '11'): SubjectConfig[] => {
-    // Grade 9 (and 8)
-    if (grade === '9') {
-        return [
-            { 
-                ...SUB_AZ_BASE, 
-                length: 30, // 26 + 4
-                points: 100, 
-                segments: [
-                    { type: 'closed', count: 26, points: 2, lengthPerItem: 1 }, 
-                    { type: 'written', count: 4, points: 12, lengthPerItem: 1 }, 
-                ]
-            },
-            { 
-                ...SUB_MATH_BASE, 
-                length: 25, // 15 + 6 + 4
-                points: 100,
-                segments: [
-                    { type: 'closed', count: 15, points: 2, lengthPerItem: 1 },
-                    { type: 'open', count: 6, points: 5, lengthPerItem: 5 },
-                    { type: 'written', count: 4, points: 10, lengthPerItem: 1 },
-                ]
-            },
-            { 
-                ...SUB_ENG_BASE, 
-                length: 26, // 22 + 2 + 2
-                points: 100,
-                segments: [
-                     { type: 'closed', count: 22, points: 2, lengthPerItem: 1 },
-                     { type: 'open', count: 2, points: 5, lengthPerItem: 5 },
-                     { type: 'written', count: 2, points: 13, lengthPerItem: 1 },
-                ]
-            }
-        ];
-    }
+    const layout = getBuraxilisLayout(grade);
 
-    // Grade 10
-    if (grade === '10') {
-        return [
-            { 
-                ...SUB_AZ_BASE, 
-                length: 30, // 20 + 10
-                points: 100, 
-                segments: [
-                    { type: 'closed', count: 20, points: 2, lengthPerItem: 1 }, 
-                    { type: 'written', count: 10, points: 6, lengthPerItem: 1 }, 
-                ]
-            },
-            { 
-                ...SUB_MATH_BASE, 
-                length: 25, // 13 + 5 + 7
-                points: 100,
-                segments: [
-                    { type: 'closed', count: 13, points: 2, lengthPerItem: 1 },
-                    { type: 'open', count: 5, points: 5, lengthPerItem: 5 },
-                    { type: 'written', count: 7, points: 7, lengthPerItem: 1 },
-                ]
-            },
-            { 
-                ...SUB_ENG_BASE, 
-                length: 26, // 22 + 2 + 2
-                points: 100,
-                segments: [
-                     { type: 'closed', count: 22, points: 2, lengthPerItem: 1 },
-                     { type: 'open', count: 2, points: 5, lengthPerItem: 5 },
-                     { type: 'written', count: 2, points: 13, lengthPerItem: 1 },
-                ]
-            }
-        ];
-    }
+    // Calculate Segments based on Layout
+    const getSegs = (subj: string) => {
+        const segs: SubjectSegment[] = [];
+        layout.filter(l => l.subject === subj).forEach(l => {
+             if (l.type === 'closed') segs.push({ type: 'closed', count: l.length!, points: 2, lengthPerItem: 1 });
+             if (l.type === 'open') segs.push({ type: 'open', count: l.count!, points: 5, lengthPerItem: 5 });
+             if (l.type === 'written') segs.push({ type: 'written', count: l.length!, points: l.subject === 'az' ? 10 : (l.subject==='math'?7:2), lengthPerItem: 1 });
+        });
+        return segs;
+    };
 
-    // Grade 11
-    if (grade === '11') {
-        return [
-            { 
-                ...SUB_AZ_BASE, 
-                length: 30, // 20 + 10
-                points: 100, 
-                segments: [
-                    { type: 'closed', count: 20, points: 2, lengthPerItem: 1 }, 
-                    { type: 'written', count: 10, points: 6, lengthPerItem: 1 }, 
-                ]
-            },
-            { 
-                ...SUB_MATH_BASE, 
-                length: 25, // 13 + 5 + 7
-                points: 100,
-                segments: [
-                    { type: 'closed', count: 13, points: 2, lengthPerItem: 1 },
-                    { type: 'open', count: 5, points: 5, lengthPerItem: 5 },
-                    { type: 'written', count: 7, points: 7, lengthPerItem: 1 },
-                ]
-            },
-            { 
-                ...SUB_ENG_BASE, 
-                length: 30, // 23 + 7
-                points: 100,
-                segments: [
-                     { type: 'closed', count: 23, points: 2, lengthPerItem: 1 },
-                     { type: 'written', count: 7, points: 7.7, lengthPerItem: 1 },
-                ]
-            }
-        ];
-    }
-    
-    return [];
+    const SEG_AZ = getSegs('az');
+    const SEG_MATH = getSegs('math');
+    const SEG_ENG = getSegs('eng');
+
+
+    // All grades (9, 10, 11) currently share the same structure for Buraxilis
+    // The points might differ, but the segment counts and types are consistent.
+    // The points are defined in the SEG_ constants.
+    return [
+        { ...SUB_AZ_BASE, length: 30, points: 100, segments: SEG_AZ },
+        { ...SUB_MATH_BASE, length: 45, points: 100, segments: SEG_MATH },
+        { ...SUB_ENG_BASE, length: 34, points: 100, segments: SEG_ENG },
+    ];
 };
 
 export const BURAXILIS_CONFIGS: Record<string, SubjectConfig[]> = {
-    '08': createBuraxilisConfig('9'), // 8th same as 9th
     '09': createBuraxilisConfig('9'),
     '10': createBuraxilisConfig('10'),
     '11': createBuraxilisConfig('11'),
@@ -246,7 +194,7 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
   const cleanText = rawText.replace(/`/g, '');
   
   // 2. Split into lines
-  let lines = cleanText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+  let lines = cleanText.split(/\r?\n/).map(l => l.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '')).filter(l => l.length > 0);
 
   // 3. Merge broken lines (Heuristic)
   const mergedLines: string[] = [];
@@ -347,12 +295,15 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
         const sinif = line.slice(28, 30).trim();
         const qrup = line.slice(30, 31).trim();
         const dil = line.slice(31, 32).trim();
-        const variant = line.slice(32, 33).trim();
-        const bolme = line.slice(33, 34).trim();
+        
+        // Variant is not explicitly in the header range [28-32] for this format.
+        // Defaulting to 'A' as most Buraxilis exams use a single variant or it's handled via Answer Key matching.
+        const variant = 'A'; 
+        const bolme = '';
         
         // Data Layers
-        // Start at 34
-        const DATA_START = 34;
+        // Start at 32 (After "101R" which ends at 32)
+        const DATA_START = 32;
         const activeConfig = configMap[student.sinif || '09'] || configMap['09']; 
         const subAz = activeConfig[0];
         const subMath = activeConfig[1];

@@ -33,6 +33,7 @@ import {
   CLASS_CONFIGS,
   BURAXILIS_CONFIGS,
 } from "@/lib/omr-parser";
+import { ParsingDebugger } from "./parsing-debugger";
 import { GradedStudent, SubjectScore } from "@/lib/grading";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -275,11 +276,19 @@ const SubjectKeyInputs = ({
   openWeights?: Record<string, number[]>;
   onOpenWeightsChange?: (subjectId: string, weights: number[]) => void;
 }) => {
+  // Helper to calculate actual char length of a subject
+  const getSubjectLength = (s: SubjectConfig) => {
+      if (s.segments && s.segments.length > 0) {
+          return s.segments.reduce((acc, seg) => acc + (seg.count * seg.lengthPerItem), 0);
+      }
+      return s.length || 0;
+  };
+
   const handleSubjectChange = (subjectIndex: number, newValue: string) => {
     let currentIndex = 0;
     let newValueFull = value || "";
 
-    const totalLength = config.reduce((acc, s) => acc + (s.length || 0), 0);
+    const totalLength = config.reduce((acc, s) => acc + getSubjectLength(s), 0);
     if (newValueFull.length < totalLength) {
       newValueFull = newValueFull.padEnd(totalLength, " ");
     }
@@ -287,7 +296,7 @@ const SubjectKeyInputs = ({
     let result = "";
 
     config.forEach((subj, idx) => {
-      const segLen = subj.length || 0;
+      const segLen = getSubjectLength(subj);
       const oldSeg = newValueFull.slice(currentIndex, currentIndex + segLen);
 
       if (idx === subjectIndex) {
@@ -307,17 +316,16 @@ const SubjectKeyInputs = ({
     segmentIndex: number,
     newValue: string
   ) => {
-    let currentIndex = 0;
     const subject = config[subjectIndex];
     if (!subject) return;
     
     // Get current full subject value
     let subjectGlobalStart = 0;
     for(let i=0; i<subjectIndex; i++) {
-        subjectGlobalStart += config[i]?.length || 0;
+        subjectGlobalStart += getSubjectLength(config[i]);
     }
     
-    const subjectLength = subject.length || 0;
+    const subjectLength = getSubjectLength(subject);
     const currentSubjectValue = (value || "").slice(subjectGlobalStart, subjectGlobalStart + subjectLength).padEnd(subjectLength, " ");
 
     if (!subject.segments) {
@@ -360,7 +368,7 @@ const SubjectKeyInputs = ({
 
       <div className="flex flex-wrap items-start gap-6">
         {config.map((subject, subjectIdx) => {
-          const subjLen = subject.length || 0;
+          const subjLen = getSubjectLength(subject);
           const start = currentReadIndex;
           const end = currentReadIndex + subjLen;
           const subjectValue = (value || "").slice(start, end).trim(); 
@@ -560,7 +568,14 @@ const SubjectKeyInputs = ({
 
                                   // Calculate Offsets Inline
                                   let subjectStart = 0;
-                                  for(let i=0; i<subjectIndex; i++) subjectStart += (config[i].length || 0);
+                                  for(let i=0; i<subjectIndex; i++) {
+                                      const s = config[i];
+                                      if (s.segments) {
+                                          subjectStart += s.segments.reduce((acc, seg) => acc + (seg.count * seg.lengthPerItem), 0);
+                                      } else {
+                                          subjectStart += (s.length || 0);
+                                      }
+                                  }
                                   
                                   let segmentStart = 0;
                                   for(let k=0; k<segmentIndex; k++) {
@@ -688,7 +703,14 @@ const SubjectKeyInputs = ({
                               // Numeric Question Mode (String Input)
                               // Calculate start index
                               let start = 0;
-                              for(let i=0; i<subjectIndex; i++) start += (config[i].length || 0);
+                              for(let i=0; i<subjectIndex; i++) {
+                                  const s = config[i];
+                                  if (s.segments) {
+                                      start += s.segments.reduce((acc, seg) => acc + (seg.count * seg.lengthPerItem), 0);
+                                  } else {
+                                      start += (s.length || 0);
+                                  }
+                              }
                               const segmentStart = subject.segments!.slice(0, segmentIndex).reduce((acc, s) => acc + (s.count * s.lengthPerItem), 0);
                               const globalStart = start + segmentStart;
                               const segmentValue = (value || "").slice(globalStart, globalStart + (seg.count * seg.lengthPerItem)).padEnd(seg.count * seg.lengthPerItem, " ");
@@ -914,8 +936,9 @@ export default function OMRDashboard() {
   const workerRef = useRef<Worker | null>(null);
 
   const [configMap, setConfigMap] = useState<Record<string, SubjectConfig[]>>({
-    default: DEFAULT_SUBJECT_CONFIG,
     ...CLASS_CONFIGS,
+    ...BURAXILIS_CONFIGS, // Merge Buraxilis configs
+    default: DEFAULT_SUBJECT_CONFIG,
   });
 
   useEffect(() => {
@@ -1679,6 +1702,11 @@ export default function OMRDashboard() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Parsing Debugger (Buraxilis Only) */}
+        {examType === 'buraxilis' && rawText && (
+            <ParsingDebugger rawText={rawText} />
         )}
 
         {/* Layout */}
