@@ -10,6 +10,7 @@ export interface PDFGenerationOptions {
   examName: string;
   examDate: string;
   includeRank?: boolean;
+  examType?: 'standard' | 'buraxilis';
 }
 
 /**
@@ -22,19 +23,36 @@ export async function generateStudentPDF(
   rank?: number,
   totalStudents?: number
 ): Promise<Blob> {
-  const doc = (
-    <ExamResultPDF
-      student={student}
-      config={config}
-      examName={options.examName}
-      examDate={options.examDate}
-      rank={options.includeRank ? rank : undefined}
-      totalStudents={totalStudents}
-    />
-  );
+  // Determine which template to render
+  let doc: React.ReactElement;
+
+  if (options.examType === 'buraxilis') {
+    const { BuraxilisExamResultPDF } = await import('./pdf-buraxilis');
+    doc = (
+      <BuraxilisExamResultPDF
+        student={student}
+        config={config}
+        examName={options.examName}
+        examDate={options.examDate}
+        rank={options.includeRank ? rank : undefined}
+        totalStudents={totalStudents}
+      />
+    );
+  } else {
+    doc = (
+      <ExamResultPDF
+        student={student}
+        config={config}
+        examName={options.examName}
+        examDate={options.examDate}
+        rank={options.includeRank ? rank : undefined}
+        totalStudents={totalStudents}
+      />
+    );
+  }
 
   const { pdf } = await import('@react-pdf/renderer');
-  const asPdf = pdf(doc);
+  const asPdf = pdf(doc as any);
   const blob = await asPdf.toBlob();
   return blob;
 }
@@ -80,18 +98,32 @@ export async function generateCombinedPDF(
     }));
 
   // Generate combined PDF
-  const { CombinedExamResultPDF } = await import('./pdf-combined');
-  const doc = (
-    <CombinedExamResultPDF
-      students={studentData}
-      examName={options.examName}
-      examDate={options.examDate}
-      totalStudents={totalStudents}
-    />
-  );
+  let doc: React.ReactElement;
+  
+  if (options.examType === 'buraxilis') {
+    const { CombinedBuraxilisExamResultPDF } = await import('./pdf-buraxilis-combined');
+    doc = (
+      <CombinedBuraxilisExamResultPDF
+        students={studentData}
+        examName={options.examName}
+        examDate={options.examDate}
+        totalStudents={totalStudents}
+      />
+    );
+  } else {
+    const { CombinedExamResultPDF } = await import('./pdf-combined');
+    doc = (
+      <CombinedExamResultPDF
+        students={studentData}
+        examName={options.examName}
+        examDate={options.examDate}
+        totalStudents={totalStudents}
+      />
+    );
+  }
 
   const { pdf } = await import('@react-pdf/renderer');
-  const asPdf = pdf(doc);
+  const asPdf = pdf(doc as any);
   const blob = await asPdf.toBlob();
   return blob;
 }

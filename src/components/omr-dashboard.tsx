@@ -1032,6 +1032,7 @@ export default function OMRDashboard() {
   });
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const headerScrollRef = useRef<HTMLDivElement>(null);
 
   // 1. Worker Lifecycle (Mount/Unmount)
   const [openWeights, setOpenWeights] = useState<Record<string, Record<string, number[]>>>({}); // {class: {subjectId: [w1, w2]}}
@@ -1242,6 +1243,7 @@ export default function OMRDashboard() {
         examName: examName.trim(),
         examDate: examDate,
         includeRank: includeRank,
+        examType: examType,
       });
 
       await downloadCombinedPDF(combinedBlob, examName.trim());
@@ -1305,6 +1307,7 @@ export default function OMRDashboard() {
           examName: examName.trim(),
           examDate: examDate,
           includeRank: includeRank,
+          examType: examType,
         },
         rank,
         gradedData?.filter((s) => s.isValid && s.scores).length
@@ -2081,91 +2084,105 @@ export default function OMRDashboard() {
                       </span>
                     </span>
                   </div>
-                  <div className="text-xs text-slate-400">
-                    Total: {validCount} student(s)
-                  </div>
-                </div>
-
-                {/* Detached Header for Virtualization */}
-                <div className="flex-none border-b border-slate-200 bg-slate-50 relative z-20 shadow-sm">
-                  <table className="w-full text-left border-collapse table-fixed">
-                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                      <tr>
-                        <th className="px-3 py-3 font-semibold w-[80px]">
-                          İş №
-                        </th>
-                        <th className="px-3 py-3 font-semibold w-[200px]">
-                          Ad Soyad
-                        </th>
-                        <th className="px-2 py-3 font-semibold w-[150px]">
-                          Sinif
-                        </th>
-                        <th className="px-2 py-3 font-semibold w-[50px] text-center">
-                          Var
-                        </th>
-                        <th className="px-3 py-3 font-semibold w-[100px] text-center bg-blue-50/50 text-indigo-600">
-                          Yekun
-                        </th>
-                        {allUniqueSubjects.map((subject) => {
-                          const width = Math.max(100, (subject.length || 10) * 15);
-                          return (
-                            <th
-                              key={subject.id}
-                              className="px-3 py-3 font-semibold text-right whitespace-nowrap"
-                              style={{
-                                minWidth: `${width}px`,
-                                width: `${width}px`,
-                              }}
-                            >
-                              {subject.name.slice(0, 5).toUpperCase()}
-                            </th>
-                          );
-                        })}
-                      </tr>
-                    </thead>
-                  </table>
-                </div>
-
-                {/* Virtualized Body */}
-                <div
-                  ref={scrollRef}
-                  className="overflow-auto flex-1 w-full relative bg-white"
-                >
-                  <div
-                    style={{
-                      height: `${rowVirtualizer.getTotalSize()}px`,
-                      width: "100%",
-                      position: "relative",
-                    }}
-                  >
-                    <table
-                      className="w-full text-left border-collapse table-fixed"
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        transform: `translateY(${
-                          rowVirtualizer.getVirtualItems()[0]?.start ?? 0
-                        }px)`,
-                      }}
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-slate-400">
+                      Total: {validCount} student(s)
+                    </div>
+                    <button
+                      onClick={handleGenerateAllPDFs}
+                      disabled={isGeneratingPDFs || validCount === 0}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all active:scale-95",
+                        isGeneratingPDFs || validCount === 0
+                          ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                          : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200"
+                      )}
                     >
-                      <tbody className="divide-y divide-slate-100">
-                        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                          const item = allValidData[virtualRow.index];
-                          return (
-                            <TableRow
-                              key={item.id}
-                              item={item}
-                              configMap={configMap}
-                              allUniqueSubjects={allUniqueSubjects}
-                              onGeneratePDF={handleGenerateSinglePDF}
-                            />
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                      <Download className="w-4 h-4" />
+                      {isGeneratingPDFs ? "Hazırlanır..." : "Ümumi PDF"}
+                    </button>
                   </div>
                 </div>
+
+                {/* Single scrollable container with two tables sharing the same column widths */}
+                {(() => {
+                  const fixedCols = [
+                    { w: 80 }, { w: 200 }, { w: 150 }, { w: 50 }, { w: 100 },
+                  ];
+                  const subjCols = allUniqueSubjects.map((s) => ({
+                    w: Math.max(100, (s.length || 10) * 15),
+                  }));
+                  const totalW = fixedCols.reduce((a, c) => a + c.w, 0) +
+                    subjCols.reduce((a, c) => a + c.w, 0);
+                  const colgroup = (
+                    <colgroup>
+                      {fixedCols.map((c, i) => <col key={i} style={{ width: c.w }} />)}
+                      {subjCols.map((c, i) => <col key={`s${i}`} style={{ width: c.w }} />)}
+                    </colgroup>
+                  );
+                  return (
+                    <div
+                      ref={scrollRef}
+                      className="overflow-auto flex-1 w-full relative bg-white"
+                    >
+                      {/* Sticky header table */}
+                      <div className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200">
+                        <table
+                          className="text-left border-collapse table-fixed"
+                          style={{ width: totalW, minWidth: "100%" }}
+                        >
+                          {colgroup}
+                          <thead className="bg-slate-100 text-slate-500 text-xs uppercase tracking-wider">
+                            <tr>
+                              <th className="px-3 py-3 font-semibold">İş №</th>
+                              <th className="px-3 py-3 font-semibold">Ad Soyad</th>
+                              <th className="px-2 py-3 font-semibold">Sinif</th>
+                              <th className="px-2 py-3 font-semibold text-center">Var</th>
+                              <th className="px-3 py-3 font-semibold text-center bg-blue-50/50 text-indigo-600">Yekun</th>
+                              {allUniqueSubjects.map((subject) => (
+                                <th key={subject.id} className="px-3 py-3 font-semibold text-center whitespace-nowrap">
+                                  {subject.name.slice(0, 5).toUpperCase()}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                        </table>
+                      </div>
+
+                      {/* Virtualized body */}
+                      <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: "relative" }}>
+                        <table
+                          className="text-left border-collapse table-fixed"
+                          style={{
+                            width: totalW,
+                            minWidth: "100%",
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            transform: `translateY(${rowVirtualizer.getVirtualItems()[0]?.start ?? 0}px)`,
+                          }}
+                        >
+                          {colgroup}
+                          <tbody className="divide-y divide-slate-100">
+                            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                              const item = allValidData[virtualRow.index];
+                              return (
+                                <TableRow
+                                  key={item.id}
+                                  item={item}
+                                  configMap={configMap}
+                                  allUniqueSubjects={allUniqueSubjects}
+                                  onGeneratePDF={handleGenerateSinglePDF}
+                                />
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
+
               </div>
             ) : parsedData ? (
               <div className="h-full flex flex-col items-center justify-center text-slate-400 p-12 border border-slate-200 border-dashed rounded-xl bg-slate-50/50 min-h-[400px]">
