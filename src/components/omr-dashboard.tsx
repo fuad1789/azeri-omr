@@ -1367,11 +1367,18 @@ export default function OMRDashboard() {
     if (Object.keys(neededKeys).length === 0) return false;
     return Object.entries(neededKeys).some(([cls, variants]) => {
       return variants.some((variant) => {
-        const key = answerKeys[cls]?.[variant] || "";
-        return key.length > 0;
+        // Check direct key first
+        const directKey = answerKeys[cls]?.[variant] || "";
+        if (directKey.length > 0) return true;
+        // Check language-specific keys (e.g. A-I, A-R)
+        const langs = detectedLangs[cls]?.[variant] || [];
+        if (langs.length > 0) {
+          return langs.some(l => (answerKeys[cls]?.[`${variant}-${l}`] || "").length > 0);
+        }
+        return false;
       });
     });
-  }, [neededKeys, answerKeys]);
+  }, [neededKeys, answerKeys, detectedLangs]);
 
   const detectedClasses = Object.keys(neededKeys);
 
