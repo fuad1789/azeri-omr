@@ -1,10 +1,5 @@
-
-import OMRDashboard from "@/components/omr-dashboard";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <main>
-      <OMRDashboard />
-    </main>
-  );
+  redirect("/admin");
 }

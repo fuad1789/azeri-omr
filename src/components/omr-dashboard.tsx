@@ -24,6 +24,7 @@ import {
   FileDown,
   ChevronDown,
   ChevronUp,
+  Database,
 } from "lucide-react";
 import {
   ParsedStudent,
@@ -43,6 +44,7 @@ import {
   downloadCombinedPDF,
   downloadPDF,
 } from "@/lib/pdf-utils";
+import { useSession, signOut } from "next-auth/react";
 
 // dnd-kit imports
 import {
@@ -968,6 +970,7 @@ const TableRow = React.memo(
 TableRow.displayName = "TableRow";
 
 export default function OMRDashboard() {
+  const { data: session } = useSession();
   const [examType, setExamType] = useState<'standard' | 'buraxilis'>('standard');
   const [rawText, setRawText] = useState("");
   const [parsedData, setParsedData] = useState<ParsedStudent[] | null>(null);
@@ -1020,6 +1023,8 @@ export default function OMRDashboard() {
   );
   const [isGeneratingPDFs, setIsGeneratingPDFs] = useState(false);
   const [includeRank, setIncludeRank] = useState(true);
+  const [isSavingToDB, setIsSavingToDB] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const [answerKeys, setAnswerKeys] = useState<
     Record<string, Record<string, string>>
@@ -1328,6 +1333,45 @@ export default function OMRDashboard() {
     }
   };
 
+  const handleSaveToDatabase = async () => {
+    if (!gradedData || gradedData.length === 0) return;
+    if (!examName.trim()) {
+      alert('Zəhmət olmasa imtahan adını daxil edin.');
+      return;
+    }
+
+    setIsSavingToDB(true);
+    setSaveStatus('idle');
+
+    try {
+      const res = await fetch('/api/exams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          examName: examName.trim(),
+          examDate,
+          examType,
+          students: gradedData,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Naməlum xəta');
+      }
+
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 4000);
+    } catch (err: any) {
+      console.error('[handleSaveToDatabase]', err);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 4000);
+    } finally {
+      setIsSavingToDB(false);
+    }
+  };
+
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
   }, []);
@@ -1595,8 +1639,7 @@ export default function OMRDashboard() {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-
+          <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsConfigOpen(true)}
                 className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all shadow-sm active:scale-95"
@@ -1604,6 +1647,30 @@ export default function OMRDashboard() {
                 <Settings className="w-4 h-4" />
                 Konfiqurasiya
               </button>
+
+              {/* User avatar + sign out */}
+              {session?.user && (
+                <div className="flex items-center gap-2">
+                  {session.user.image && (
+                    <img
+                      src={session.user.image}
+                      alt={session.user.name || ''}
+                      className="w-8 h-8 rounded-full border-2 border-slate-200 shadow-sm"
+                      title={session.user.email || ''}
+                    />
+                  )}
+                  <button
+                    onClick={() => signOut({ callbackUrl: '/login' })}
+                    className="bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                    title="Çıxış et"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Çıxış
+                  </button>
+                </div>
+              )}
           </div>
         </div>
 
@@ -2088,6 +2155,35 @@ export default function OMRDashboard() {
                     <div className="text-xs text-slate-400">
                       Total: {validCount} student(s)
                     </div>
+
+                    {/* Save to DB button */}
+                    <button
+                      onClick={handleSaveToDatabase}
+                      disabled={isSavingToDB || validCount === 0 || !examName.trim()}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all active:scale-95",
+                        isSavingToDB || validCount === 0 || !examName.trim()
+                          ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                          : saveStatus === 'success'
+                          ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200"
+                          : saveStatus === 'error'
+                          ? "bg-red-500 hover:bg-red-600 text-white shadow-md shadow-red-200"
+                          : "bg-slate-800 hover:bg-slate-900 text-white shadow-md shadow-slate-300"
+                      )}
+                      title={!examName.trim() ? 'Əvvəlcə imtahan adını daxil edin' : ''}
+                    >
+                      {isSavingToDB ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Yüklənir...</>
+                      ) : saveStatus === 'success' ? (
+                        <><CheckCircle2 className="w-4 h-4" /> Saxlanıldı!</>
+                      ) : saveStatus === 'error' ? (
+                        <><AlertTriangle className="w-4 h-4" /> Xəta!</>
+                      ) : (
+                        <><Database className="w-4 h-4" /> İmtahanı Yüklə</>
+                      )}
+                    </button>
+
+                    {/* PDF button */}
                     <button
                       onClick={handleGenerateAllPDFs}
                       disabled={isGeneratingPDFs || validCount === 0}
