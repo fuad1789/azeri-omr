@@ -17,7 +17,6 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
   try {
     if (type === 'PARSE') {
       const { rawText, configMap } = event.data;
-      // Map UI examType to Parser parseMode
       const examType = 'examType' in event.data ? event.data.examType : 'unknown';
       const parseMode = examType === 'buraxilis' ? 'buraxilis' : 'legacy';
       
