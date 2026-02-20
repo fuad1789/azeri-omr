@@ -491,7 +491,7 @@ export const ExamResultPDF: React.FC<ExamResultPDFProps> = ({
               <View style={{ flexDirection: "row" }} wrap={false}>
                 <View style={styles.scoreBox} wrap={false}>
                   <Text style={styles.scoreLabel}>BAL</Text>
-                  <Text style={styles.scoreValue}>{totalScore.toFixed(0)}</Text>
+                  <Text style={styles.scoreValue}>{Number(totalScore.toFixed(2))}</Text>
                 </View>
               </View>
             </View>
@@ -602,11 +602,11 @@ export const ExamResultPDF: React.FC<ExamResultPDFProps> = ({
                     key={subj.id}
                     style={[styles.tableCellBold, styles.verticalDivider]}
                   >
-                    {score ? score.netScore.toFixed(0) : "0"}
+                    {score ? Number(score.netScore.toFixed(2)) : "0"}
                   </Text>
                 );
               })}
-              <Text style={styles.tableCellBold}>{totalScore.toFixed(0)}</Text>
+              <Text style={styles.tableCellBold}>{Number(totalScore.toFixed(2))}</Text>
             </View>
 
           </View>

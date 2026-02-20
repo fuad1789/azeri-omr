@@ -71,6 +71,8 @@ export const gradeStudent = (student: ParsedStudent, answerKey: string, config: 
       const subjectStart = currentIndex;
       let subjectEnd = currentIndex; // Will be advanced per segment
 
+      let globalOpenIndex = 0;
+
       for (const segment of segments) {
           const { type, count, points, lengthPerItem } = segment;
           const pointValue = Number(points); // Force number to prevent string concat bugs
@@ -122,13 +124,14 @@ export const gradeStudent = (student: ParsedStudent, answerKey: string, config: 
                       correct++;
                       // Variable Weight Logic for Open Questions
                       let weight = pointValue;
-                      if (openWeights && openWeights[subject.id] && openWeights[subject.id][q] !== undefined) {
-                          weight = openWeights[subject.id][q];
+                      if (openWeights && openWeights[subject.id] && openWeights[subject.id][globalOpenIndex] !== undefined) {
+                          weight = openWeights[subject.id][globalOpenIndex];
                       }
                       subjectNetScore += weight;
                   } else {
                       incorrect++;
                   }
+                  globalOpenIndex++;
               }
               else if (type === 'written') {
                   // Open question: 1, 2, 3
@@ -145,8 +148,8 @@ export const gradeStudent = (student: ParsedStudent, answerKey: string, config: 
                       let weight = pointValue; // Default to config
                       
                       // Try to find explicit weight
-                      if (openWeights && openWeights[subject.id] && openWeights[subject.id][q] !== undefined) {
-                          weight = openWeights[subject.id][q];
+                      if (openWeights && openWeights[subject.id] && openWeights[subject.id][globalOpenIndex] !== undefined) {
+                          weight = openWeights[subject.id][globalOpenIndex];
                       } 
                       // 2. Fallback to Dynamic Weight (if available and no explicit weight)
                       else if (derivedOpenWeight > 0) {
@@ -171,6 +174,7 @@ export const gradeStudent = (student: ParsedStudent, answerKey: string, config: 
                       // For stats
                       if (val > 0) correct++;
                   }
+                  globalOpenIndex++;
               }
           }
       }

@@ -171,9 +171,25 @@ const createBuraxilisConfig = (grade: '9' | '10' | '11'): SubjectConfig[] => {
     const getSegs = (subj: string) => {
         const segs: SubjectSegment[] = [];
         layout.filter(l => l.subject === subj).forEach(l => {
-             if (l.type === 'closed') segs.push({ type: 'closed', count: l.length!, points: 2, lengthPerItem: 1 });
-             if (l.type === 'open') segs.push({ type: 'open', count: l.count!, points: 5, lengthPerItem: 5 });
-             if (l.type === 'written') segs.push({ type: 'written', count: l.length!, points: l.subject === 'az' ? 10 : (l.subject==='math'?7:l.length!), lengthPerItem: 1 });
+             let points = 2;
+             if (l.subject === 'az') {
+                 if (l.type === 'closed') points = (grade === '9') ? 3.07692307 : 2.5;
+                 if (l.type === 'open') points = 5;
+                 if (l.type === 'written') points = 5;
+             } else if (l.subject === 'math') {
+                 if (l.type === 'closed' || l.type === 'open') points = (grade === '9') ? 3.57142857 : 3.125;
+                 if (l.type === 'written') points = 6.25;
+             } else if (l.subject === 'eng') {
+                 if (l.type === 'closed' || l.type === 'open') points = (grade === '9' || grade === '10') ? 3.75 : 2.70250969;
+                 if (l.type === 'written') points = (grade === '9' || grade === '10') ? 5 : 5.40571428;
+             }
+
+             segs.push({
+                 type: l.type as any,
+                 count: (l.type === 'open' ? l.count : l.length)!,
+                 points,
+                 lengthPerItem: l.type === 'open' ? 5 : 1
+             });
         });
         return segs;
     };
@@ -306,7 +322,7 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
         const soyad = line.slice(10, 20).trim();
         const isNomresi = line.slice(20, 25).trim();
         const mekteb = line.slice(25, 28).trim();
-        const sinif = line.slice(28, 30).trim();
+        const sinif = line.slice(28, 30).trim(); // PARSE SINIF FIRST!
         const qrup = line.slice(30, 31).trim();
         const dil = line.slice(31, 32).trim();
         const variant = line.slice(32, 33).trim(); // User confirmed: 33 (1-based) -> 32 index
@@ -317,7 +333,8 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
         const DATA_START = 34;
         
         // Use Global Layout Strategy directly for parsing
-        const layout = getBuraxilisLayout(student.sinif || '09');
+        // CRITICAL: Use the parsed sinif value, not student.sinif which is undefined at this point!
+        const layout = getBuraxilisLayout(sinif || '09');
         let currentPtr = DATA_START;
         
         // Initialize subject strings

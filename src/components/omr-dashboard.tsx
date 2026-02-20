@@ -263,15 +263,17 @@ SubjectRow.displayName = "SubjectRow"; // Re-add display name
 
 const SubjectKeyInputs = ({
   variant,
-  value,
+  languages,
+  values,
   onChange,
   config,
   openWeights,
   onOpenWeightsChange,
 }: {
   variant: string;
-  value: string;
-  onChange: (val: string) => void;
+  languages: string[];
+  values: Record<string, string>;
+  onChange: (val: Record<string, string>) => void;
   config: SubjectConfig[];
   openWeights?: Record<string, number[]>;
   onOpenWeightsChange?: (subjectId: string, weights: number[]) => void;
@@ -284,52 +286,56 @@ const SubjectKeyInputs = ({
       return s.length || 0;
   };
 
-  const handleSubjectChange = (subjectIndex: number, newValue: string) => {
-    let currentIndex = 0;
-    let newValueFull = value || "";
-
+  const handleSubjectChange = (subjectIndex: number, newValue: string, optLang?: string) => {
     const totalLength = config.reduce((acc, s) => acc + getSubjectLength(s), 0);
-    if (newValueFull.length < totalLength) {
-      newValueFull = newValueFull.padEnd(totalLength, " ");
-    }
+    const updates: Record<string, string> = {};
 
-    let result = "";
+    languages.forEach(lang => {
+       if (optLang !== undefined && lang !== optLang) return; // Only update specific lang if specified
 
-    config.forEach((subj, idx) => {
-      const segLen = getSubjectLength(subj);
-      const oldSeg = newValueFull.slice(currentIndex, currentIndex + segLen);
+       let currentIndex = 0;
+       let newValueFull = values[lang] || "";
+       if (newValueFull.length < totalLength) newValueFull = newValueFull.padEnd(totalLength, " ");
 
-      if (idx === subjectIndex) {
-        result += newValue.padEnd(segLen, " ").slice(0, segLen);
-      } else {
-        result += oldSeg.padEnd(segLen, " ").slice(0, segLen);
-      }
-      currentIndex += segLen;
+       let result = "";
+       config.forEach((subj, idx) => {
+         const segLen = getSubjectLength(subj);
+         const oldSeg = newValueFull.slice(currentIndex, currentIndex + segLen);
+
+         if (idx === subjectIndex) {
+           result += newValue.padEnd(segLen, " ").slice(0, segLen);
+         } else {
+           result += oldSeg.padEnd(segLen, " ").slice(0, segLen);
+         }
+         currentIndex += segLen;
+       });
+       updates[lang] = result;
     });
 
-    onChange(result);
+    onChange(updates);
   };
-
 
   const handleSegmentChange = (
     subjectIndex: number,
     segmentIndex: number,
-    newValue: string
+    newValue: string,
+    optLang: string
   ) => {
     const subject = config[subjectIndex];
     if (!subject) return;
     
-    // Get current full subject value
     let subjectGlobalStart = 0;
     for(let i=0; i<subjectIndex; i++) {
         subjectGlobalStart += getSubjectLength(config[i]);
     }
     
     const subjectLength = getSubjectLength(subject);
-    const currentSubjectValue = (value || "").slice(subjectGlobalStart, subjectGlobalStart + subjectLength).padEnd(subjectLength, " ");
+    const effectiveLang = optLang === "ALL" ? (languages[0] || "") : optLang;
+    const valFull = values[effectiveLang] || "";
+    const currentSubjectValue = valFull.slice(subjectGlobalStart, subjectGlobalStart + subjectLength).padEnd(subjectLength, " ");
 
     if (!subject.segments) {
-        handleSubjectChange(subjectIndex, newValue);
+        handleSubjectChange(subjectIndex, newValue, optLang === "ALL" ? undefined : optLang);
         return;
     }
 
@@ -348,10 +354,10 @@ const SubjectKeyInputs = ({
         segStart += segLen;
     });
 
-    handleSubjectChange(subjectIndex, newSubjectString);
+    handleSubjectChange(subjectIndex, newSubjectString, optLang === "ALL" ? undefined : optLang);
   }
 
-  const [editingSegment, setEditingSegment] = useState<{subjectIndex: number, segmentIndex: number} | null>(null);
+  const [editingSegment, setEditingSegment] = useState<{subjectIndex: number, segmentIndex: number, lang: string} | null>(null);
 
   let currentReadIndex = 0;
 
@@ -371,15 +377,16 @@ const SubjectKeyInputs = ({
           const subjLen = getSubjectLength(subject);
           const start = currentReadIndex;
           const end = currentReadIndex + subjLen;
-          const subjectValue = (value || "").slice(start, end).trim(); 
-          const rawSubjectValue = (value || "").slice(start, end).padEnd(subjLen, " ");
           
           currentReadIndex += subjLen;
+
+          const isLanguageDependent = subject.id === 'xariciDil' && languages.length > 1 && languages.some(l => l !== "");
+          const langsToRender = isLanguageDependent ? languages : [languages[0] || ""];
 
           return (
             <div
               key={subject.id || subjectIdx}
-              className="flex flex-col items-start gap-1.5"
+              className="flex flex-col items-start gap-3"
             >
               <div className="flex items-center gap-2 w-full">
                 <div
@@ -396,85 +403,98 @@ const SubjectKeyInputs = ({
                 </label>
               </div>
 
-              {!subject.segments ? (
-                <div className="relative" style={{ width: `${Math.max((subject.length || 0) + 4, 14)}ch` }}>
-                    <input
-                    type="text"
-                    value={rawSubjectValue.trim()}
-                    maxLength={subject.length}
-                    onChange={(e) =>
-                        handleSubjectChange(subjectIdx, e.target.value.toUpperCase())
-                    }
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono tracking-widest text-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:outline-none uppercase transition-all shadow-sm"
-                    placeholder="Cavab..."
-                    />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono pointer-events-none">
-                    {rawSubjectValue.trim().length}/{subject.length}
-                    </span>
-                </div>
+              <div className="flex flex-col gap-2 relative">
+                  {langsToRender.map(lang => {
+                      const valFull = values[lang] || "";
+                      const rawSubjectValue = valFull.slice(start, end).padEnd(subjLen, " ");
 
-              ) : (
-                  <div className="flex items-start gap-2">
-                       {subject.segments.map((seg, segIdx) => {
-                           let segStart = 0;
-                           for(let k=0; k<segIdx; k++) {
-                               const s = subject.segments![k];
-                               if (s) segStart += s.count * s.lengthPerItem;
-                           }
-                           
-                           const segLen = seg.count * seg.lengthPerItem;
-                           const segVal = rawSubjectValue.slice(segStart, segStart + segLen);
-                           
-                           const label = seg.type === 'closed' ? 'Qapalı' : seg.type === 'open' ? 'Açıq' : 'Yazı';
-                           const showLabel = subject.segments!.length > 1;
-                           const inputWidth = Math.max(segLen + 2, 8); // ch
+                      return (
+                          <div key={lang || "default"} className="flex flex-col gap-1">
+                              {isLanguageDependent && (
+                                  <div className="text-[10px] font-bold text-slate-400">
+                                      {lang} DİLİ
+                                  </div>
+                              )}
+                              {!subject.segments ? (
+                                <div className="relative" style={{ width: `${Math.max((subject.length || 0) + 4, 14)}ch` }}>
+                                    <input
+                                    type="text"
+                                    value={rawSubjectValue.trim()}
+                                    maxLength={subject.length}
+                                    onChange={(e) =>
+                                        handleSubjectChange(subjectIdx, e.target.value.toUpperCase(), isLanguageDependent ? lang : undefined)
+                                    }
+                                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono tracking-widest text-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:outline-none uppercase transition-all shadow-sm"
+                                    placeholder="Cavab..."
+                                    />
+                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono pointer-events-none">
+                                    {rawSubjectValue.trim().length}/{subject.length}
+                                    </span>
+                                </div>
+                              ) : (
+                                  <div className="flex items-start gap-2">
+                                       {subject.segments.map((seg, segIdx) => {
+                                           let segStart = 0;
+                                           for(let k=0; k<segIdx; k++) {
+                                               const s = subject.segments![k];
+                                               if (s) segStart += s.count * s.lengthPerItem;
+                                           }
+                                           
+                                           const segLen = seg.count * seg.lengthPerItem;
+                                           const segVal = rawSubjectValue.slice(segStart, segStart + segLen);
+                                           
+                                           const label = seg.type === 'closed' ? 'Qapalı' : seg.type === 'open' ? 'Açıq' : 'Yazı';
+                                           const showLabel = subject.segments!.length > 1;
+                                           const inputWidth = Math.max(segLen + 2, 8); // ch
 
-                           // Modified: Use Modal for both Numeric AND Open types
-                            // Case 1: Open OR Written Question Type
-                           if (seg.type === 'open' || seg.type === 'written') {
-                                return (
-                                    <div key={segIdx} className="flex flex-col gap-1 w-full flex-1 min-w-[120px]">
-                                        {showLabel && <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">{label}</span>}
-                                        <button
-                                            onClick={() => setEditingSegment({ subjectIndex: subjectIdx, segmentIndex: segIdx })}
-                                            className={cn("w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 h-[38px]",
-                                                seg.type === 'written' ? "text-amber-600 bg-amber-50 hover:bg-amber-100 hover:border-amber-300" : "text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300"
-                                            )}
-                                        >
-                                            <Key className="w-3 h-3" />
-                                            Daxil et
-                                        </button>
-                                         <span className="text-[8px] text-slate-300 font-mono text-right px-1">
-                                            {seg.count} sual
-                                        </span>
-                                    </div>
-                                );
-                            }
+                                           if (seg.type === 'open' || seg.type === 'written') {
+                                                return (
+                                                    <div key={segIdx} className="flex flex-col gap-1 w-full flex-1 min-w-[120px]">
+                                                        {showLabel && <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">{label}</span>}
+                                                        <button
+                                                            onClick={() => setEditingSegment({ subjectIndex: subjectIdx, segmentIndex: segIdx, lang: isLanguageDependent ? lang : "ALL" })}
+                                                            className={cn("w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 h-[38px]",
+                                                                seg.type === 'written' ? "text-amber-600 bg-amber-50 hover:bg-amber-100 hover:border-amber-300" : "text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300"
+                                                            )}
+                                                        >
+                                                            <Key className="w-3 h-3" />
+                                                            Daxil et
+                                                        </button>
+                                                         <span className="text-[8px] text-slate-300 font-mono text-right px-1">
+                                                            {seg.count} sual
+                                                        </span>
+                                                    </div>
+                                                );
+                                            }
 
-                           return (
-                               <div key={segIdx} className="flex flex-col gap-1">
-                                    {showLabel && <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">{label}</span>}
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            value={segVal.trim()}
-                                            maxLength={segLen}
-                                            onChange={(e) => handleSegmentChange(subjectIdx, segIdx, e.target.value.toUpperCase())}
-                                            className={cn(
-                                                "bg-white border border-slate-200 rounded-lg px-2 py-2 text-sm font-mono tracking-widest text-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:outline-none uppercase transition-all shadow-sm",
-                                            )}
-                                            style={{ width: `${inputWidth}ch`, minWidth: '60px' }}
-                                            placeholder="..."
-                                        />
-                                         <span className="absolute right-1 bottom-0.5 text-[8px] text-slate-300 font-mono pointer-events-none">
-                                            {seg.count}
-                                        </span>
-                                    </div>
-                               </div>
-                           )
-                       })}
-                  </div>
-              )}
+                                           return (
+                                               <div key={segIdx} className="flex flex-col gap-1">
+                                                    {showLabel && <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">{label}</span>}
+                                                    <div className="relative">
+                                                        <input
+                                                            type="text"
+                                                            value={segVal.trim()}
+                                                            maxLength={segLen}
+                                                            onChange={(e) => handleSegmentChange(subjectIdx, segIdx, e.target.value.toUpperCase(), isLanguageDependent ? lang : "ALL")}
+                                                            className={cn(
+                                                                "bg-white border border-slate-200 rounded-lg px-2 py-2 text-sm font-mono tracking-widest text-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:outline-none uppercase transition-all shadow-sm",
+                                                            )}
+                                                            style={{ width: `${inputWidth}ch`, minWidth: '60px' }}
+                                                            placeholder="..."
+                                                        />
+                                                         <span className="absolute right-1 bottom-0.5 text-[8px] text-slate-300 font-mono pointer-events-none">
+                                                            {seg.count}
+                                                        </span>
+                                                    </div>
+                                               </div>
+                                           )
+                                       })}
+                                  </div>
+                              )}
+                          </div>
+                      );
+                  })}
+              </div>
             </div>
           );
         })}
@@ -490,9 +510,16 @@ const SubjectKeyInputs = ({
                             const subject = config[subjectIndex];
                             const seg = subject.segments![segmentIndex];
                             
+                            let localOpenStart = 0;
+                            for(let k=0; k<segmentIndex; k++) {
+                                const s = subject.segments![k];
+                                if (s && (s.type === 'open' || s.type === 'written')) localOpenStart += s.count;
+                            }
+                            
                             // Smart Validator Logic
                             if (seg.type === 'written') {
                                 const currentWeights = (openWeights && openWeights[subject.id]) ? openWeights[subject.id] : [];
+                                const segmentWeights = currentWeights.slice(localOpenStart, localOpenStart + seg.count);
                                 
                                 // Calculate Fixed Score (Closed + Numeric)
                                 console.log('segments', subject.segments);
@@ -507,7 +534,9 @@ const SubjectKeyInputs = ({
                                 const remainingForOpen = totalTarget - fixedScore;
                                 
                                 // Calculate Current Explicit Total
-                                const currentOpenTotal = currentWeights.reduce((acc, w) => acc + (w || 0), 0);
+                                const currentOpenTotal = Array.from({ length: seg.count }).reduce((acc, _, i) => {
+                                    return (acc as number) + (segmentWeights[i] !== undefined ? segmentWeights[i] : seg.points);
+                                }, 0) as number;
                                 const finalTotal = fixedScore + currentOpenTotal;
                                 const isOver = finalTotal > totalTarget;
                                 
@@ -539,13 +568,23 @@ const SubjectKeyInputs = ({
                   <div className="p-6 max-h-[60vh] overflow-y-auto">
                       <div className="space-y-4">
                           {(() => {
-                              const { subjectIndex, segmentIndex } = editingSegment;
+                              const { subjectIndex, segmentIndex, lang } = editingSegment;
+                              const actLang = lang === "ALL" ? (languages[0] || "") : lang;
+                              const valFull = values[actLang] || "";
+
                               const subject = config[subjectIndex];
                               const seg = subject.segments![segmentIndex];
+                              
+                              let localOpenStart = 0;
+                              for(let k=0; k<segmentIndex; k++) {
+                                  const s = subject.segments![k];
+                                  if (s && (s.type === 'open' || s.type === 'written')) localOpenStart += s.count;
+                              }
                               
                               if (seg.type === 'open' && openWeights && onOpenWeightsChange) {
                                   // Open Question Mode (Weight Input AND Answer Key)
                                   const currentWeights = openWeights[subject.id] || [];
+                                  const segmentWeights = currentWeights.slice(localOpenStart, localOpenStart + seg.count);
                                   
                                   // Calculate Total Score for Header
                                   const fixedScore = subject.segments!.reduce((acc, s) => {
@@ -556,11 +595,11 @@ const SubjectKeyInputs = ({
                                   }, 0);
 
                                   const totalTarget = 100; 
-                                  const currentOpenTotal = currentWeights.reduce((a, b) => a + b, 0);
+                                  const currentOpenTotal = Array.from({ length: seg.count }).reduce((acc, _, i) => {
+                                      return (acc as number) + (segmentWeights[i] !== undefined ? segmentWeights[i] : seg.points);
+                                  }, 0) as number;
                                   
-                                  const effectiveOpenTotal = currentWeights.length > 0 
-                                     ? currentOpenTotal 
-                                     : (seg.count * seg.points);
+                                  const effectiveOpenTotal = currentOpenTotal;
 
                                    const finalTotal = fixedScore + effectiveOpenTotal;
                                   
@@ -586,9 +625,10 @@ const SubjectKeyInputs = ({
 
                                   const renderList = [];
                                   for(let i=0; i<seg.count; i++) {
+                                      const globalQIndex = localOpenStart + i;
                                       const itemGlobalStart = segmentGlobalStart + (i * seg.lengthPerItem);
-                                      const itemVal = (value || "").slice(itemGlobalStart, itemGlobalStart + seg.lengthPerItem).trim();
-                                      const weight = currentWeights[i] !== undefined ? currentWeights[i] : seg.points;
+                                      const itemVal = valFull.slice(itemGlobalStart, itemGlobalStart + seg.lengthPerItem).trim();
+                                      const weight = currentWeights[globalQIndex] !== undefined ? currentWeights[globalQIndex] : seg.points;
 
                                       renderList.push(
                                          <div key={i} className="flex items-center gap-2 mb-2 p-2 bg-white border border-slate-100 rounded-lg shadow-sm">
@@ -600,10 +640,18 @@ const SubjectKeyInputs = ({
                                                  value={itemVal}
                                                  onChange={(e) => {
                                                      const newVal = e.target.value.padEnd(seg.lengthPerItem, ' ').slice(0, seg.lengthPerItem); 
-                                                     const currentFull = (value || "").padEnd(segmentGlobalStart + (seg.count * seg.lengthPerItem), ' ');
+                                                     const currentFull = valFull.padEnd(segmentGlobalStart + (seg.count * seg.lengthPerItem), ' ');
                                                      const pre = currentFull.slice(0, itemGlobalStart);
                                                      const post = currentFull.slice(itemGlobalStart + seg.lengthPerItem);
-                                                     onChange(pre + newVal + post);
+                                                     
+                                                     const newFullStr = pre + newVal + post;
+                                                     const updates = { ...values };
+                                                     if (lang === "ALL") {
+                                                         languages.forEach(l => updates[l] = newFullStr);
+                                                     } else {
+                                                         updates[lang] = newFullStr;
+                                                     }
+                                                     onChange(updates);
                                                  }}
                                                  className="flex-1 px-3 py-2 border border-slate-200 rounded text-sm font-mono tracking-widest focus:border-indigo-500 outline-none uppercase"
                                                  placeholder="_____"
@@ -621,10 +669,7 @@ const SubjectKeyInputs = ({
                                                              const val = parseFloat(e.target.value);
                                                              if (isNaN(val)) return;
                                                              const newWeights = [...currentWeights];
-                                                             if (newWeights.length === 0) {
-                                                                 for(let k=0; k<seg.count; k++) newWeights[k] = seg.points;
-                                                             }
-                                                             newWeights[i] = val;
+                                                             newWeights[globalQIndex] = val;
                                                              onOpenWeightsChange(subject.id, newWeights);
                                                          }}
                                                          className="w-20 px-2 py-2 border border-amber-200 bg-amber-50 text-amber-700 rounded text-sm font-bold text-center focus:border-amber-500 outline-none"
@@ -664,15 +709,16 @@ const SubjectKeyInputs = ({
                                   const currentWeights = openWeights[subject.id] || [];
                                   
                                   return Array.from({ length: seg.count }).map((_, qIdx) => {
+                                      const globalQIndex = localOpenStart + qIdx;
                                       return (
                                           <div key={qIdx} className="flex items-center gap-4">
                                               <span className="w-16 text-xs font-bold text-slate-500 uppercase">Sual {qIdx + 1}</span>
                                               <input
                                                   type="number"
                                                   step="0.01"
-                                                  value={currentWeights[qIdx] === undefined || currentWeights[qIdx] === 0 ? (currentWeights[qIdx] === 0 ? "0" : "") : currentWeights[qIdx]}
+                                                  value={currentWeights[globalQIndex] === undefined ? seg.points : currentWeights[globalQIndex] === 0 ? "0" : currentWeights[globalQIndex]}
                                                   onFocus={(e) => e.target.select()}
-                                                  placeholder="Əmsal (məs: 1.25)"
+                                                  placeholder={`Əmsal (məs: ${seg.points})`}
                                                   className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-lg font-mono text-center focus:ring-2 focus:ring-amber-500 outline-none text-amber-700 font-bold"
                                                   onChange={(e) => {
                                                       let val = e.target.value;
@@ -684,14 +730,10 @@ const SubjectKeyInputs = ({
 
                                                       const numVal = parseFloat(val);
                                                       const newWeights = [...currentWeights];
-                                                      // Fill gaps if any
-                                                      for(let i=0; i<seg.count; i++) {
-                                                          if(newWeights[i] === undefined) newWeights[i] = 0; 
-                                                      }
                                                       
                                                       // If empty string or NaN, store as 0 but maybe we want to allow empty?
                                                       // Let's store 0 for logic, but UI handles empty.
-                                                      newWeights[qIdx] = isNaN(numVal) ? 0 : numVal;
+                                                      newWeights[globalQIndex] = isNaN(numVal) ? 0 : numVal;
                                                       onOpenWeightsChange(subject.id, newWeights);
                                                   }}
                                               />
@@ -713,7 +755,7 @@ const SubjectKeyInputs = ({
                               }
                               const segmentStart = subject.segments!.slice(0, segmentIndex).reduce((acc, s) => acc + (s.count * s.lengthPerItem), 0);
                               const globalStart = start + segmentStart;
-                              const segmentValue = (value || "").slice(globalStart, globalStart + (seg.count * seg.lengthPerItem)).padEnd(seg.count * seg.lengthPerItem, " ");
+                              const segmentValue = valFull.slice(globalStart, globalStart + (seg.count * seg.lengthPerItem)).padEnd(seg.count * seg.lengthPerItem, " ");
                               
                               return Array.from({ length: seg.count }).map((_, qIdx) => {
                                   const qStart = qIdx * seg.lengthPerItem;
@@ -736,7 +778,7 @@ const SubjectKeyInputs = ({
                                                       newVal.padEnd(seg.lengthPerItem, " ") + 
                                                       segmentValue.slice(qStart + seg.lengthPerItem);
                                                   
-                                                  handleSegmentChange(subjectIndex, segmentIndex, newSegmentValue);
+                                                  handleSegmentChange(subjectIndex, segmentIndex, newSegmentValue, lang);
                                               }}
                                           />
                                       </div>
@@ -813,9 +855,9 @@ const TableRow = React.memo(
           {item.variant}
         </td>
         <td className="px-3 py-3 font-bold text-center text-indigo-600 bg-blue-50/30 w-[100px]">
-          {item.scores ? totalScore.toFixed(0) : "-"}
+          {item.scores ? Number(totalScore.toFixed(2)) : "-"}
           <span className="text-[10px] text-slate-400 block font-normal">
-            / {maxScore}
+            / {Math.round(maxScore)}
           </span>
         </td>
 
@@ -838,7 +880,7 @@ const TableRow = React.memo(
             >
               <div className="flex flex-col items-start gap-1">
                 <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
-                  {score ? score.netScore.toFixed(1) : "-"}
+                  {score ? Number(score.netScore.toFixed(2)) : "-"}
                 </span>
                 
                 {score && score.studentAnswerString && (
@@ -969,6 +1011,7 @@ export default function OMRDashboard() {
   const [configActiveTab, setConfigActiveTab] = useState<string>("01");
 
   const [neededKeys, setNeededKeys] = useState<Record<string, string[]>>({});
+  const [detectedLangs, setDetectedLangs] = useState<Record<string, Record<string, string[]>>>({});
   const [activeClass, setActiveClass] = useState<string>("");
 
   const [examName, setExamName] = useState<string>("");
@@ -1034,14 +1077,21 @@ export default function OMRDashboard() {
     setParsedData(results);
 
     const detected: Record<string, Set<string>> = {};
+    const detectedLangsBuild: Record<string, Record<string, Set<string>>> = {};
     const detectedClassesSet = new Set<string>();
 
     results.forEach((student) => {
       if (student.isValid) {
-        if (!detected[student.sinif]) {
-          detected[student.sinif] = new Set();
-        }
+        if (!detected[student.sinif]) detected[student.sinif] = new Set();
         detected[student.sinif].add(student.variant);
+
+        if (!detectedLangsBuild[student.sinif]) detectedLangsBuild[student.sinif] = {};
+        if (!detectedLangsBuild[student.sinif][student.variant]) detectedLangsBuild[student.sinif][student.variant] = new Set();
+        
+        if (examType === 'buraxilis' && student.dil && student.dil.trim() !== '') {
+            detectedLangsBuild[student.sinif][student.variant].add(student.dil.toUpperCase());
+        }
+        
         detectedClassesSet.add(student.sinif);
       }
     });
@@ -1066,6 +1116,15 @@ export default function OMRDashboard() {
       });
 
     setNeededKeys(finalNeeded);
+
+    const finalLangs: Record<string, Record<string, string[]>> = {};
+    Object.keys(detectedLangsBuild).forEach(cls => {
+       finalLangs[cls] = {};
+       Object.keys(detectedLangsBuild[cls]).forEach(v => {
+          finalLangs[cls][v] = Array.from(detectedLangsBuild[cls][v]).sort();
+       });
+    });
+    setDetectedLangs(finalLangs);
 
     const detectedClasses = Object.keys(finalNeeded);
     if (detectedClasses.length > 0) {
@@ -1871,9 +1930,12 @@ export default function OMRDashboard() {
                         );
 
                         const isComplete = variants.every(
-                          (v) =>
-                            (answerKeys[cls]?.[v] || "").length >=
-                              requiredLength && requiredLength > 0
+                          (v) => {
+                              const langs = detectedLangs[cls]?.[v] || [];
+                              const checkLen = (key: string) => (answerKeys[cls]?.[key] || "").length >= requiredLength && requiredLength > 0;
+                              if (langs.length > 0) return langs.every(l => checkLen(`${v}-${l}`));
+                              return checkLen(v);
+                          }
                         );
 
                         return (
@@ -1903,14 +1965,24 @@ export default function OMRDashboard() {
                   <div className="p-6 overflow-y-auto flex-1 bg-white">
                     {activeClass && (
                       <div className="flex flex-col gap-6">
-                        {(neededKeys[activeClass] || []).map((variant) => (
+                        {(neededKeys[activeClass] || []).map((variant) => {
+                          const langs = detectedLangs[activeClass]?.[variant] || [];
+                          const valuesObj: Record<string, string> = {};
+                          if (langs.length > 0) {
+                              langs.forEach(l => valuesObj[l] = answerKeys[activeClass]?.[`${variant}-${l}`] || "");
+                          } else {
+                              valuesObj[""] = answerKeys[activeClass]?.[variant] || "";
+                          }
+
+                          return (
                           <SubjectKeyInputs
                             key={variant}
                             variant={variant}
+                            languages={langs.length > 0 ? langs : [""]}
+                            values={valuesObj}
                             config={
                               configMap[activeClass] || configMap["default"]
                             }
-                            value={answerKeys[activeClass]?.[variant] || ""}
                             openWeights={openWeights[activeClass] || {}}
                             onOpenWeightsChange={(subjectId, weights) => {
                                 setOpenWeights((prev) => ({
@@ -1921,17 +1993,21 @@ export default function OMRDashboard() {
                                     }
                                 }));
                             }}
-                            onChange={(newValue) => {
-                              setAnswerKeys((prev) => ({
-                                ...prev,
-                                [activeClass]: {
-                                  ...(prev[activeClass] || {}),
-                                  [variant]: newValue,
-                                },
-                              }));
+                            onChange={(updates) => {
+                              setAnswerKeys((prev) => {
+                                const newClassKeys = { ...(prev[activeClass] || {}) };
+                                Object.entries(updates).forEach(([lang, val]) => {
+                                    const storeKey = lang ? `${variant}-${lang}` : variant;
+                                    newClassKeys[storeKey] = val;
+                                });
+                                return {
+                                  ...prev,
+                                  [activeClass]: newClassKeys,
+                                };
+                              });
                             }}
-                          /> // <--- Close tag 
-                        ))}
+                          />
+                        )})}
                       </div>
                     )}
                     {!activeClass && (

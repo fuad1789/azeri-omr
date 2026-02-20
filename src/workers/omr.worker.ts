@@ -31,7 +31,15 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
         if (!student.isValid) return student;
         
         const classKeys = answerKeys[student.sinif];
-        const key = classKeys ? classKeys[student.variant] : '';
+        let key = '';
+        if (classKeys) {
+            const complexKey = `${student.variant}-${(student.dil || '').toUpperCase().trim()}`;
+            if (classKeys[complexKey]) {
+                key = classKeys[complexKey];
+            } else if (classKeys[student.variant]) {
+                key = classKeys[student.variant];
+            }
+        }
         const config = configMap[student.sinif] || configMap['default'];
         
         // Pass class-specific open weights if available
