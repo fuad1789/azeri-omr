@@ -292,7 +292,7 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
         if (!student.isNomresi) return createErrorRecord(line, "Missing Student ID");
 
         return {
-            id: crypto.randomUUID(),
+            id: Date.now().toString(),
             originalLine: line,
             ad: student.ad!,
             soyad: student.soyad!,
@@ -377,7 +377,7 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
         const sequentialAnswerString = mappedSubjects['azDili'] + mappedSubjects['riyaziyyat'] + mappedSubjects['xariciDil'];
 
         return {
-            id: crypto.randomUUID(),
+            id: Date.now().toString(),
             originalLine: line,
             ad: student.ad!,
             soyad: student.soyad!,
@@ -405,7 +405,7 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
 
 function createErrorRecord(line: string, errorMsg: string): ParsedStudent {
   return {
-    id: crypto.randomUUID(),
+    id: Date.now().toString(),
     originalLine: line,
 
     ad: '', soyad: '', ataAdi: '', isNomresi: '', mekteb: '', sinif: '', dil: '', variant: '', bolme: '', sinfinAdi: '', cins: '', qrup: '',
