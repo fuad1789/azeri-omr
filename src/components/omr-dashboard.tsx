@@ -33,9 +33,10 @@ import {
   DEFAULT_SUBJECT_CONFIG,
   CLASS_CONFIGS,
   BURAXILIS_CONFIGS,
+  parseOMRData,
 } from "@/lib/omr-parser";
 import { ParsingDebugger } from "./parsing-debugger";
-import { GradedStudent, SubjectScore } from "@/lib/grading";
+import { gradeStudent, GradedStudent, SubjectScore } from "@/lib/grading";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -978,7 +979,6 @@ export default function OMRDashboard() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const workerRef = useRef<Worker | null>(null);
 
   const [configMap, setConfigMap] = useState<Record<string, SubjectConfig[]>>({
     ...CLASS_CONFIGS,
@@ -1042,41 +1042,23 @@ export default function OMRDashboard() {
   // 1. Worker Lifecycle (Mount/Unmount)
   const [openWeights, setOpenWeights] = useState<Record<string, Record<string, number[]>>>({}); // {class: {subjectId: [w1, w2]}}
 
-  useEffect(() => {
-    workerRef.current = new Worker(
-      new URL("../workers/omr.worker.ts", import.meta.url)
-    );
-    return () => {
-      workerRef.current?.terminate();
-    };
-  }, []);
-
-  // 2. Message Handler (Updates when handling logic changes)
-  // This ensures handleParseComplete uses the LATEST configMap
-  useEffect(() => {
-      if (!workerRef.current) return;
-
-      workerRef.current.onmessage = (event) => {
-          const { type, data, error } = event.data;
-          if (type === "PARSE_COMPLETE") {
-              handleParseComplete(data);
-              setIsProcessing(false);
-          } else if (type === "GRADE_COMPLETE") {
-              setGradedData(data);
-              setIsProcessing(false);
-          } else if (type === "ERROR") {
-              console.error("Worker Error:", error);
-              setIsProcessing(false);
-              alert("An error occurred during processing: " + error);
-          }
-      };
-  }, [configMap, answerKeys]); // Dependencies that handleParseComplete/grading logic might need
-
   const handleParse = () => {
     if (!rawText.trim()) return;
     setIsProcessing(true);
-    // Send examType to worker to enforce correct parsing mode
-    workerRef.current?.postMessage({ type: "PARSE", rawText, configMap, examType });
+    
+    // Slight timeout allows UI to render the loading state
+    setTimeout(() => {
+      try {
+        const parseMode = examType === 'buraxilis' ? 'buraxilis' : 'legacy';
+        const results = parseOMRData(rawText, configMap, parseMode);
+        handleParseComplete(results);
+      } catch (error: any) {
+        console.error("Parse Error:", error);
+        alert("An error occurred during parsing: " + error.message);
+      } finally {
+        setIsProcessing(false);
+      }
+    }, 50);
   };
 
   const handleParseComplete = (results: ParsedStudent[]) => {
@@ -1141,16 +1123,34 @@ export default function OMRDashboard() {
   };
 
   useEffect(() => {
-    if (parsedData && workerRef.current) {
+    if (parsedData && parsedData.length > 0) {
+      setIsProcessing(true);
       const timer = setTimeout(() => {
-        workerRef.current?.postMessage({
-          type: "GRADE",
-          parsedData,
-          answerKeys,
-          configMap,
-          openWeights,
-        });
-      }, 300);
+        try {
+          const gradedResults = parsedData.map(student => {
+            if (!student.isValid) return student;
+            const classKeys = answerKeys[student.sinif];
+            let key = '';
+            if (classKeys) {
+                const complexKey = `${student.variant}-${(student.dil || '').toUpperCase().trim()}`;
+                if (classKeys[complexKey]) {
+                    key = classKeys[complexKey];
+                } else if (classKeys[student.variant]) {
+                    key = classKeys[student.variant];
+                }
+            }
+            const config = configMap[student.sinif] || configMap['default'];
+            const classWeights = openWeights ? openWeights[student.sinif] : undefined;
+            return gradeStudent(student, key || '', config, classWeights);
+          });
+          setGradedData(gradedResults);
+        } catch (error) {
+          console.error("Grade Error:", error);
+          alert("Qrammatik/Qymətləndirmə xətası: " + (error as Error).message);
+        } finally {
+          setIsProcessing(false);
+        }
+      }, 50);
       return () => clearTimeout(timer);
     }
   }, [parsedData, answerKeys, configMap, openWeights]);
