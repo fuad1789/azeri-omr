@@ -4,9 +4,14 @@ import { NextResponse } from 'next/server';
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
-    const allowed = process.env.ALLOWED_EMAIL || '';
 
-    if (token && token.email !== allowed) {
+    // Double-check allowed emails (ALLOWED_EMAILS is comma-separated)
+    const allowedEmails = (process.env.ALLOWED_EMAILS || process.env.ALLOWED_EMAIL || '')
+      .split(',')
+      .map(e => e.trim().toLowerCase())
+      .filter(Boolean);
+
+    if (token && allowedEmails.length > 0 && !allowedEmails.includes((token.email || '').toLowerCase())) {
       return NextResponse.redirect(new URL('/login?error=AccessDenied', req.url));
     }
 
@@ -26,4 +31,5 @@ export default withAuth(
 export const config = {
   matcher: ['/admin/:path*', '/api/exams/:path*'],
 };
+
 
