@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import PublicLayoutWrapper from '@/components/layout/PublicLayoutWrapper';
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,6 +20,9 @@ export default function RootLayout({
   return (
     <html lang="az">
       <body className={inter.className}>
+        {process.env.NEXT_PUBLIC_GA_ID ? (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        ) : null}
         <Providers>
           <PublicLayoutWrapper>
             {children}
@@ -28,3 +32,4 @@ export default function RootLayout({
     </html>
   );
 }
+
