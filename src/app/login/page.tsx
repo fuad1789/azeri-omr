@@ -54,7 +54,31 @@ function LoginContent() {
               </svg>
               <div>
                 <p className="text-red-300 font-semibold text-sm">İcazəniz yoxdur</p>
-                <p className="text-red-400/70 text-xs mt-0.5">Bu sistemə girişiniz məhdudlaşdırılmışdır.</p>
+                <p className="text-red-400/70 text-xs mt-0.5">Bu hesab sistemə girişə icazəli deyil.</p>
+              </div>
+            </div>
+          )}
+
+          {(error === 'OAuthCallbackError' || error === 'OAuthSignin' || error === 'Callback') && (
+            <div className="mb-6 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
+              <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <div>
+                <p className="text-amber-300 font-semibold text-sm">Sessiya xətası</p>
+                <p className="text-amber-400/70 text-xs mt-0.5">Cookie problemi. Brauzer cookie-lərini silib yenidən cəhd edin, və ya incognito məcərədən girin.</p>
+              </div>
+            </div>
+          )}
+
+          {error && error !== 'AccessDenied' && error !== 'OAuthCallbackError' && error !== 'OAuthSignin' && error !== 'Callback' && (
+            <div className="mb-6 bg-slate-500/10 border border-slate-500/30 rounded-xl p-4 flex items-start gap-3">
+              <svg className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="text-slate-300 font-semibold text-sm">Xəta baş verdi</p>
+                <p className="text-slate-400/70 text-xs mt-1 font-mono">{error}</p>
               </div>
             </div>
           )}

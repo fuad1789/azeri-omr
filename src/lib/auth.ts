@@ -2,6 +2,9 @@ import GoogleProvider from 'next-auth/providers/google';
 import type { NextAuthOptions } from 'next-auth';
 import { sendAuthNotification } from './auth-notify';
 
+const useSecureCookies = process.env.NEXTAUTH_URL?.startsWith('https://');
+const cookiePrefix = useSecureCookies ? '__Secure-' : '';
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -13,7 +16,31 @@ export const authOptions: NextAuthOptions = {
   // Session expires in 8 hours — user must re-authenticate daily
   session: {
     strategy: 'jwt',
-    maxAge: 8 * 60 * 60, // 8 saat (saniyə ilə)
+    maxAge: 8 * 60 * 60,
+  },
+
+  // Fix 'State cookie was missing' error behind Nginx reverse proxy
+  cookies: {
+    sessionToken: {
+      name: `${cookiePrefix}next-auth.session-token`,
+      options: { httpOnly: true, sameSite: 'lax', path: '/', secure: !!useSecureCookies },
+    },
+    callbackUrl: {
+      name: `${cookiePrefix}next-auth.callback-url`,
+      options: { sameSite: 'lax', path: '/', secure: !!useSecureCookies },
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
+      options: { httpOnly: true, sameSite: 'lax', path: '/', secure: !!useSecureCookies },
+    },
+    state: {
+      name: `${cookiePrefix}next-auth.state`,
+      options: { httpOnly: true, sameSite: 'lax', path: '/', secure: !!useSecureCookies, maxAge: 900 },
+    },
+    pkceCodeVerifier: {
+      name: `${cookiePrefix}next-auth.pkce.code_verifier`,
+      options: { httpOnly: true, sameSite: 'lax', path: '/', secure: !!useSecureCookies, maxAge: 900 },
+    },
   },
 
   callbacks: {
