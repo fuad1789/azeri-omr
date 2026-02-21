@@ -46,6 +46,9 @@ export interface IExamSession extends Document {
   totalStudents: number;
   validStudents: number;
   students: IStudentResult[];
+  classes: string[];
+  variants: string[];
+  groups: string[];
   savedAt: Date;
 }
 
@@ -95,6 +98,9 @@ const ExamSessionSchema = new Schema<IExamSession>(
     totalStudents: { type: Number, default: 0 },
     validStudents: { type: Number, default: 0 },
     students:      { type: [StudentResultSchema], default: [] },
+    classes:       { type: [String], default: [] },
+    variants:      { type: [String], default: [] },
+    groups:        { type: [String], default: [] },
     savedAt:       { type: Date, default: Date.now },
   },
   {

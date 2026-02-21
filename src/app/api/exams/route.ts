@@ -57,6 +57,10 @@ export async function POST(req: NextRequest) {
       totalStudents: validStudents.length,
     }));
 
+    const classes = Array.from(new Set(studentResults.map((s: any) => s.sinif).filter(Boolean)));
+    const variants = Array.from(new Set(studentResults.map((s: any) => s.variant).filter(Boolean)));
+    const groups = Array.from(new Set(studentResults.map((s: any) => s.bolme || s.qrup).filter(Boolean)));
+
     const savedRecord = await ExamSession.create({
       examName,
       examDate,
@@ -64,6 +68,9 @@ export async function POST(req: NextRequest) {
       totalStudents: students.length,
       validStudents: validStudents.length,
       students: studentResults,
+      classes,
+      variants,
+      groups,
       savedAt: new Date(),
     });
 

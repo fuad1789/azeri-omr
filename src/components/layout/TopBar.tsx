@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Facebook, Instagram, Play } from 'lucide-react'
+import { Facebook, Instagram } from 'lucide-react'
 
 export default function TopBar() {
   const [selectedBranch, setSelectedBranch] = useState('sumqayit')
@@ -12,29 +12,9 @@ export default function TopBar() {
   ]
 
   return (
-    <div className="bg-[#F8FAFC] border-b border-black/5" style={{ height: '44px' }}>
+    <div className="hidden sm:block bg-[#F8FAFC] border-b border-black/5" style={{ height: '44px' }}>
       <div className="container-custom h-full">
-        <div className="flex items-center justify-between h-full">
-          {/* Left: Online link with play icon */}
-          <a 
-            href="#" 
-            className="flex items-center gap-2 text-[#6B7280] hover:text-brand-red transition-all duration-200 text-sm font-medium group"
-          >
-            <div className="relative flex items-center justify-center">
-              {/* Ping effect behind icon */}
-              <span className="absolute inline-flex h-full w-full rounded-full bg-brand-red opacity-20 animate-ping"></span>
-              {/* Play icon */}
-              <Play 
-                size={16} 
-                className="relative fill-current transition-transform duration-200 group-hover:scale-110" 
-              />
-            </div>
-            <span>Dərsləri online izlə</span>
-          </a>
-          
-          {/* Center: Empty flex space */}
-          <div className="flex-1"></div>
-          
+        <div className="flex items-center justify-end h-full">
           {/* Right: Branch dropdown + social icons */}
           <div className="flex items-center gap-3">
             <select
@@ -75,3 +55,4 @@ export default function TopBar() {
     </div>
   )
 }
+
