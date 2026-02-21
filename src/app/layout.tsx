@@ -1,14 +1,14 @@
-
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+import PublicLayoutWrapper from '@/components/layout/PublicLayoutWrapper';
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "OMR Dashboard",
-  description: "İmtahan nəticələrinin analizi",
+  title: 'Azəri Hazırlıq Kursları - Universitet hazırlıq mərkəzi',
+  description: 'Azəri Hazırlıq Kursları - Universitet qəbul imtahanlarına hazırlıq, attestat və sınaq imtahanları, təkmilləşdirmə kursları',
 };
 
 export default function RootLayout({
@@ -19,7 +19,11 @@ export default function RootLayout({
   return (
     <html lang="az">
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <PublicLayoutWrapper>
+            {children}
+          </PublicLayoutWrapper>
+        </Providers>
       </body>
     </html>
   );
