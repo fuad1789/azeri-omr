@@ -2,12 +2,6 @@ import GoogleProvider from 'next-auth/providers/google';
 import type { NextAuthOptions } from 'next-auth';
 import { sendAuthNotification } from './auth-notify';
 
-// Comma-separated list of allowed emails, e.g: "a@gmail.com,b@gmail.com"
-const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS || process.env.ALLOWED_EMAIL || '')
-  .split(',')
-  .map(e => e.trim().toLowerCase())
-  .filter(Boolean);
-
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -24,8 +18,15 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async signIn({ user }) {
-      if (ALLOWED_EMAILS.length === 0) return false;
-      const allowed = ALLOWED_EMAILS.includes((user.email || '').toLowerCase());
+      // Read FRESH on every request — fixes production env var timing issue
+      const allowedEmails = (process.env.ALLOWED_EMAILS || process.env.ALLOWED_EMAIL || '')
+        .split(',')
+        .map(e => e.trim().toLowerCase())
+        .filter(Boolean);
+
+      if (allowedEmails.length === 0) return false;
+
+      const allowed = allowedEmails.includes((user.email || '').toLowerCase());
 
       // Console log
       const timestamp = new Date().toISOString();
@@ -33,6 +34,7 @@ export const authOptions: NextAuthOptions = {
         console.log(`[AUTH] ✅ GİRİŞ: ${user.email} — ${timestamp}`);
       } else {
         console.warn(`[AUTH] ⛔ REDDEDİLDİ: ${user.email} — ${timestamp}`);
+        console.warn(`[AUTH] Mövcud ALLOWED_EMAILS: "${process.env.ALLOWED_EMAILS}"`);
       }
 
       // Gmail bildirişi göndər (async — auth-u gözlətmir)
@@ -44,6 +46,7 @@ export const authOptions: NextAuthOptions = {
 
       return allowed;
     },
+
 
     async session({ session }) {
       return session;
