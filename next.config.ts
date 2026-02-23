@@ -16,11 +16,11 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Next.js requires these
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://static.cloudflareinsights.com", // Next.js requires these
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
-      "img-src 'self' data: https://lh3.googleusercontent.com", // Google avatar
-      "connect-src 'self' https://cdnjs.cloudflare.com",
+      "img-src 'self' data: https://lh3.googleusercontent.com https://www.googletagmanager.com", // Google avatar
+      "connect-src 'self' https://cdnjs.cloudflare.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com",
       "frame-ancestors 'none'",
     ].join("; "),
   },
