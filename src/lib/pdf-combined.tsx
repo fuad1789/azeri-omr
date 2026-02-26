@@ -549,15 +549,24 @@ export const CombinedExamResultPDF: React.FC<CombinedPDFProps> = ({
               <Text style={[styles.tableCellBold, styles.verticalDivider]}>
                 Sual sayı
               </Text>
-              {config.map((subj) => (
-                <Text
-                  key={subj.id}
-                  style={[styles.tableCell, styles.verticalDivider]}
-                >
-                  {subj.length}
-                </Text>
-              ))}
-              <Text style={styles.tableCellBold}>{totalQuestions}</Text>
+              {config.map((subj) => {
+                const score = student.scores?.[subj.id] as SubjectScore | undefined;
+                const qCount = score?.correctAnswerString?.length ?? subj.length;
+                return (
+                  <Text
+                    key={subj.id}
+                    style={[styles.tableCell, styles.verticalDivider]}
+                  >
+                    {qCount}
+                  </Text>
+                );
+              })}
+              <Text style={styles.tableCellBold}>
+                {config.reduce((sum, subj) => {
+                  const score = student.scores?.[subj.id] as SubjectScore | undefined;
+                  return sum + (score?.correctAnswerString?.length ?? subj.length ?? 0);
+                }, 0)}
+              </Text>
             </View>
 
             <View style={styles.tableRow} wrap={false}>
