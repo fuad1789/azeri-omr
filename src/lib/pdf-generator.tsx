@@ -591,7 +591,7 @@ export const ExamResultPDF: React.FC<ExamResultPDFProps> = ({
 
             <View style={styles.tableRow} wrap={false}>
               <Text style={[styles.tableCellBold, styles.verticalDivider]}>
-                QİYMƏT
+                Bal
               </Text>
               {config.map((subj) => {
                 const score = student.scores?.[subj.id] as
