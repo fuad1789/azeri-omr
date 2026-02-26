@@ -4,6 +4,10 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import ExamSession from '@/models/Exam';
 
+// Increase body size limit to 10MB to support large exam results
+export const maxDuration = 30;
+export const dynamic = 'force-dynamic';
+
 // POST /api/exams — save a new exam session
 export async function POST(req: NextRequest) {
   try {

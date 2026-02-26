@@ -39,15 +39,6 @@ export const gradeStudent = (
     keyIndex += subjectLen;
   }
 
-  // DEBUG
-  console.log('=== GRADE DEBUG ===');
-  console.log('sinif:', student.sinif, '| variant:', student.variant);
-  Object.keys(keyPerSubject).forEach(id => {
-    const studentAns = student.subjects?.[id] ?? '(missing)';
-    const keyAns = keyPerSubject[id];
-    console.log(`  [${id}]  ANS: ${studentAns}  |  KEY: ${keyAns}`);
-  });
-  console.log('===================');
 
   const scores: Record<string, SubjectScore> = {};
   let totalNetScore = 0;

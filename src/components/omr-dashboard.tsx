@@ -1705,7 +1705,8 @@ export default function OMRDashboard() {
           examName: examName.trim(),
           examDate,
           examType,
-          students: gradedData,
+          // Strip large raw-data fields that are not needed for DB storage
+          students: gradedData.map(({ originalLine: _ol, subjects: _subj, fullAnswerString: _fas, ...rest }) => rest),
         }),
       });
 
