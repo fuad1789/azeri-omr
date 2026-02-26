@@ -300,6 +300,7 @@ interface ExamResultPDFProps {
   config: SubjectConfig[];
   examName?: string;
   examDate: string;
+  examType?: string;
   rank?: number;
   totalStudents?: number;
 }
@@ -309,6 +310,7 @@ export const ExamResultPDF: React.FC<ExamResultPDFProps> = ({
   config,
   examName,
   examDate,
+  examType,
   rank,
   totalStudents,
 }) => {
@@ -492,6 +494,9 @@ export const ExamResultPDF: React.FC<ExamResultPDFProps> = ({
                 <View style={styles.scoreBox} wrap={false}>
                   <Text style={styles.scoreLabel}>BAL</Text>
                   <Text style={styles.scoreValue}>{Number(totalScore.toFixed(2))}</Text>
+                  {examType === 'standard' && (
+                    <Text style={{ fontSize: 9, color: '#6366F1', marginTop: 2 }}>/300</Text>
+                  )}
                 </View>
               </View>
             </View>

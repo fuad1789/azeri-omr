@@ -45,6 +45,7 @@ export async function generateStudentPDF(
         config={config}
         examName={options.examName}
         examDate={options.examDate}
+        examType={options.examType}
         rank={options.includeRank ? rank : undefined}
         totalStudents={totalStudents}
       />
