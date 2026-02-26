@@ -86,6 +86,18 @@ export default function Footer() {
           <p>
             © {new Date().getFullYear()} Azəri Hazırlıq Kursları. Bütün hüquqlar qorunur.
           </p>
+          <p className="mt-2 text-xs text-gray-500">
+            Sayt{' '}
+            <a
+              href="https://www.fuadev.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-red hover:text-white transition-colors font-medium"
+            >
+              Fuad Bağıyev
+            </a>{' '}
+            tərəfindən hazırlanmışdır.
+          </p>
         </div>
       </div>
     </footer>
