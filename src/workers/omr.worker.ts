@@ -1,9 +1,9 @@
-import { parseOMRData, ParsedStudent, SubjectConfig } from '../lib/omr-parser';
+import { parseOMRData, ParsedStudent, SubjectConfig, HeaderField } from '../lib/omr-parser';
 import { gradeStudent, GradedStudent } from '../lib/grading';
 
 // Define message types
 type WorkerMessage = 
-  | { type: 'PARSE'; rawText: string; configMap: Record<string, SubjectConfig[]>; examType?: string }
+  | { type: 'PARSE'; rawText: string; configMap: Record<string, SubjectConfig[]>; examType?: string; headerConfig?: HeaderField[] }
   | { type: 'GRADE'; parsedData: ParsedStudent[]; answerKeys: Record<string, Record<string, string>>; configMap: Record<string, SubjectConfig[]>; openWeights?: Record<string, Record<string, number[]>> };
 
 type WorkerResponse = 
@@ -16,11 +16,11 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
 
   try {
     if (type === 'PARSE') {
-      const { rawText, configMap } = event.data;
+      const { rawText, configMap, headerConfig } = event.data;
       const examType = 'examType' in event.data ? event.data.examType : 'unknown';
       const parseMode = examType === 'buraxilis' ? 'buraxilis' : 'legacy';
       
-      const results = parseOMRData(rawText, configMap, parseMode);
+      const results = parseOMRData(rawText, configMap, parseMode, undefined, headerConfig);
       self.postMessage({ type: 'PARSE_COMPLETE', data: results });
     } 
     else if (type === 'GRADE') {

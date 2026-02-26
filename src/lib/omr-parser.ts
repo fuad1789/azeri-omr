@@ -20,6 +20,39 @@ export interface ParsedStudent {
   error?: string;
 }
 
+export interface HeaderField {
+  id: keyof ParsedStudent | 'skip';
+  name: string;
+  length: number;
+}
+
+export const DEFAULT_LEGACY_HEADER: HeaderField[] = [
+  { id: 'ad', name: 'Ad', length: 14 },
+  { id: 'soyad', name: 'Soyad', length: 14 },
+  { id: 'ataAdi', name: 'Ata Adı', length: 15 },
+  { id: 'isNomresi', name: 'İş Nömrəsi', length: 5 },
+  { id: 'mekteb', name: 'Məktəb', length: 3 },
+  { id: 'sinif', name: 'Sinif', length: 2 },
+  { id: 'dil', name: 'Bölmə (XBT)', length: 1 },
+  { id: 'variant', name: 'Variant', length: 1 },
+  { id: 'bolme', name: 'Bölmə', length: 1 },
+  { id: 'sinfinAdi', name: 'Sinfin Adı', length: 1 },
+  { id: 'cins', name: 'Cins', length: 1 },
+  { id: 'qrup', name: 'Qrup', length: 1 },
+];
+
+export const DEFAULT_BURAXILIS_HEADER: HeaderField[] = [
+  { id: 'ad', name: 'Ad', length: 10 },
+  { id: 'soyad', name: 'Soyad', length: 10 },
+  { id: 'isNomresi', name: 'İş Nömrəsi', length: 5 },
+  { id: 'mekteb', name: 'Məktəb', length: 3 },
+  { id: 'sinif', name: 'Sinif', length: 2 },
+  { id: 'qrup', name: 'Qrup', length: 1 },
+  { id: 'dil', name: 'Bölmə (XBT)', length: 1 },
+  { id: 'variant', name: 'Variant', length: 1 },
+  { id: 'bolme', name: 'Bölmə', length: 1 },
+];
+
 
 export interface SubjectSegment {
     type: 'closed' | 'open' | 'written';
@@ -219,7 +252,7 @@ export const BURAXILIS_CONFIGS: Record<string, SubjectConfig[]> = {
 
 export const DEFAULT_SUBJECT_CONFIG: SubjectConfig[] = CLASS_CONFIGS['02']; 
 
-export const parseOMRData = (rawText: string, configMap: Record<string, SubjectConfig[]> = { 'default': DEFAULT_SUBJECT_CONFIG }, parseMode: 'legacy' | 'buraxilis' = 'legacy'): ParsedStudent[] => {
+export const parseOMRData = (rawText: string, configMap: Record<string, SubjectConfig[]> = { 'default': DEFAULT_SUBJECT_CONFIG }, parseMode: 'legacy' | 'buraxilis' = 'legacy', dataStartIndex?: number, headerConfig?: HeaderField[]): ParsedStudent[] => {
   // 1. Clean the text: remove '`' noise
   const cleanText = rawText.replace(/`/g, '');
   
@@ -237,6 +270,11 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
     mergedLines.push(currentLine);
   }
 
+  // Determine active header configurations
+  const activeHeaderConfig = headerConfig || (parseMode === 'buraxilis' ? DEFAULT_BURAXILIS_HEADER : DEFAULT_LEGACY_HEADER);
+  const calculatedDataStart = dataStartIndex !== undefined ? dataStartIndex : activeHeaderConfig.reduce((sum, field) => sum + field.length, 0);
+
+
   // 4. Parse each line
   return mergedLines.map((line, index) => {
     try {
@@ -252,24 +290,22 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
 
       if (!isBuraxilis) {
          // --- LEGACY PARSER ---
-        if (line.length < 59) {
+        if (line.length < calculatedDataStart) {
              return createErrorRecord(line, "Line too short for Standard Exam header");
         }
-        const ad = line.slice(0, 14).trim();
-        const soyad = line.slice(14, 28).trim();
-        const ataAdi = line.slice(28, 43).trim();
-        const isNomresi = line.slice(43, 48).trim();
-        const mekteb = line.slice(48, 51).trim();
-        const sinif = line.slice(51, 53).trim();
-        const dil = line.slice(53, 54).trim();
-        const variant = line.slice(54, 55).trim();
-        const bolme = line.slice(55, 56).trim();
-        const sinfinAdi = line.slice(56, 57).trim();
-        const cins = line.slice(57, 58).trim();
-        const qrup = line.slice(58, 59).trim();
-        answerString = line.slice(59);
+        
+        // Dynamically parse header fields
+        let currentHeaderIndex = 0;
+        student = { ad: '', soyad: '', ataAdi: '', isNomresi: '', mekteb: '', sinif: '', dil: '', variant: '', bolme: '', sinfinAdi: '', cins: '', qrup: '' };
+        
+        for (const field of activeHeaderConfig) {
+            if (field.id !== 'skip') {
+                (student as any)[field.id] = line.slice(currentHeaderIndex, currentHeaderIndex + field.length).trim();
+            }
+            currentHeaderIndex += field.length;
+        }
 
-        student = { ad, soyad, ataAdi, isNomresi, mekteb, sinif, dil, variant, bolme, sinfinAdi, cins, qrup };
+        answerString = line.slice(calculatedDataStart);
         
         // Standard parsing: Sequential subject slicing
         const subjects: Record<string, string> = {};
@@ -313,28 +349,26 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
 
       } else {
         // --- BURAXILIS (V2) PARSER ---
-        // Header: 34 characters strict
-        if (line.length < 34) {
+        if (line.length < calculatedDataStart) {
              return createErrorRecord(line, "Line too short for Buraxılış Exam header");
         }
         
-        const ad = line.slice(0, 10).trim();
-        const soyad = line.slice(10, 20).trim();
-        const isNomresi = line.slice(20, 25).trim();
-        const mekteb = line.slice(25, 28).trim();
-        const sinif = line.slice(28, 30).trim(); // PARSE SINIF FIRST!
-        const qrup = line.slice(30, 31).trim();
-        const dil = line.slice(31, 32).trim();
-        const variant = line.slice(32, 33).trim(); // User confirmed: 33 (1-based) -> 32 index
-        const bolme = line.slice(33, 34).trim();   // User confirmed: 34 (1-based) -> 33 index
+        let currentHeaderIndex = 0;
+        student = { ad: '', soyad: '', ataAdi: '', isNomresi: '', mekteb: '', sinif: '', dil: '', variant: '', bolme: '', sinfinAdi: '', cins: '', qrup: '' };
+        
+        for (const field of activeHeaderConfig) {
+            if (field.id !== 'skip') {
+                (student as any)[field.id] = line.slice(currentHeaderIndex, currentHeaderIndex + field.length).trim();
+            }
+            currentHeaderIndex += field.length;
+        }
         
         // Data Layers
-        // Start at 34 (User confirmed: 35 (1-based) -> 34 index)
-        const DATA_START = 34;
+        const DATA_START = calculatedDataStart;
         
         // Use Global Layout Strategy directly for parsing
         // CRITICAL: Use the parsed sinif value, not student.sinif which is undefined at this point!
-        const layout = getBuraxilisLayout(sinif || '09');
+        const layout = getBuraxilisLayout(student.sinif || '09');
         let currentPtr = DATA_START;
         
         // Initialize subject strings
@@ -363,13 +397,6 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
         mappedSubjects['azDili'] = subjects['az'];
         mappedSubjects['riyaziyyat'] = subjects['math'];
         mappedSubjects['xariciDil'] = subjects['eng'];
-
-        student = { 
-            ad, soyad, ataAdi: '', 
-            isNomresi, mekteb, sinif, 
-            dil, variant, bolme, qrup, 
-            sinfinAdi: '', cins: '' 
-        };
 
         if (!student.isNomresi) return createErrorRecord(line, "Missing Student ID");
         
@@ -414,4 +441,33 @@ function createErrorRecord(line: string, errorMsg: string): ParsedStudent {
     isValid: false,
     error: errorMsg
   };
+}
+
+/**
+ * Re-derives the per-subject answer strings from a raw line using the current
+ * headerConfig and configMap. Call this before grading so changes to the config
+ * are always reflected — instead of using the stale student.subjects map that
+ * was built with the config that was active at parse time.
+ */
+export function extractSubjectsFromLine(
+  originalLine: string,
+  headerConfig: HeaderField[],
+  config: SubjectConfig[]
+): Record<string, string> {
+  const dataStart = headerConfig.reduce((acc, f) => acc + f.length, 0);
+  const answerString = originalLine.slice(dataStart);
+
+  const subjects: Record<string, string> = {};
+  let currentIndex = 0;
+  for (const subject of config) {
+    let len = 0;
+    if (subject.segments) {
+      len = subject.segments.reduce((acc, seg) => acc + seg.count * seg.lengthPerItem, 0);
+    } else {
+      len = subject.length || 0;
+    }
+    subjects[subject.id] = answerString.slice(currentIndex, currentIndex + len);
+    currentIndex += len;
+  }
+  return subjects;
 }
