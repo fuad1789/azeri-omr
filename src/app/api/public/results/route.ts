@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     // We won't block them if they differ slightly, but we could if strict enforcement is needed.
 
     // Calculate total possible score based on standard vs buraxilis (this is just for UI context)
-    const maxScore = exam.examType === 'buraxilis' ? 300 : 700;
+    const maxScore = exam.examType === 'buraxilis' ? 700 : 300;
 
     // Return the specific student data
     return NextResponse.json({
