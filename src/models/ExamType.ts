@@ -4,6 +4,7 @@ export interface IExamType extends Document {
   name: string;           // İmtahan növünün adı (məs: "9-cu sinif attestat")
   description?: string;   // Təsvir (istəyə bağlı)
   price?: number;         // Ödəniş məbləği (AZN) - bir dəfəlik ödəniş
+  priceDescription?: string; // Ödəniş təsviri (məs: "Aylıq", "İllik")
   isActive: boolean;      // Aktivdir?
   displayOrder: number;   // Sıralama
   createdAt: Date;
@@ -25,6 +26,10 @@ const ExamTypeSchema = new Schema<IExamType>(
     price: {
       type: Number,
       default: 0,
+    },
+    priceDescription: {
+      type: String,
+      default: "",
     },
     isActive: { 
       type: Boolean,
