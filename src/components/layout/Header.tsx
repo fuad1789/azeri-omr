@@ -10,6 +10,8 @@ export default function Header() {
 
   const navItems = [
     { href: '/', label: 'Ana səhifə' },
+    { href: '/kurslar', label: 'Kurslar' },
+    { href: '/imtahan-movzulari', label: 'İmtahan Mövzuları' },
     { href: '/xeberler', label: 'Xəbərlər' },
     { href: '/fexrlerimiz', label: 'Fəxrlərimiz' },
     { href: '/vakansiya', label: 'Vakansiya' },

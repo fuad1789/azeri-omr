@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:courses": "node scripts/seed-courses.js",
+    "seed:topics": "node scripts/seed-exam-topics.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

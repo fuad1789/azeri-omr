@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET /api/exams — list saved sessions (optional, for future use)
+// GET /api/exams — list saved sessions
 export async function GET() {
   try {
     const authSession = await getServerSession(authOptions);
@@ -100,19 +100,102 @@ export async function GET() {
     }
 
     await connectDB();
-    const sessions = await ExamSession.find({}, {
-      examName: 1,
-      examDate: 1,
-      examType: 1,
-      totalStudents: 1,
-      validStudents: 1,
-      savedAt: 1,
-    }).sort({ savedAt: -1 }).limit(50);
+    const sessions = await ExamSession.find({}).sort({ savedAt: -1 }).limit(100);
 
-    return NextResponse.json({ success: true, sessions });
+    return NextResponse.json({ success: true, data: sessions });
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: err.message },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/exams?id=xxx — update exam metadata
+export async function PUT(req: NextRequest) {
+  try {
+    const authSession = await getServerSession(authOptions);
+    if (!authSession) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectDB();
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'ID tələb olunur' },
+        { status: 400 }
+      );
+    }
+
+    const body = await req.json();
+    const { examName, examDate, examType } = body;
+
+    const updateData: Record<string, any> = {};
+    if (examName) updateData.examName = examName;
+    if (examDate) updateData.examDate = examDate;
+    if (examType) updateData.examType = examType;
+
+    const updated = await ExamSession.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true }
+    );
+
+    if (!updated) {
+      return NextResponse.json(
+        { success: false, error: 'İmtahan tapılmadı' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, data: updated });
+  } catch (err: any) {
+    console.error('[API /exams PUT]', err);
+    return NextResponse.json(
+      { success: false, error: err.message || 'Server xətası' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/exams?id=xxx — delete exam session
+export async function DELETE(req: NextRequest) {
+  try {
+    const authSession = await getServerSession(authOptions);
+    if (!authSession) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectDB();
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'ID tələb olunur' },
+        { status: 400 }
+      );
+    }
+
+    const deleted = await ExamSession.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return NextResponse.json(
+        { success: false, error: 'İmtahan tapılmadı' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, message: 'İmtahan silindi' });
+  } catch (err: any) {
+    console.error('[API /exams DELETE]', err);
+    return NextResponse.json(
+      { success: false, error: err.message || 'Server xətası' },
       { status: 500 }
     );
   }

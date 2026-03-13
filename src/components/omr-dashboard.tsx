@@ -12,6 +12,7 @@ import {
   Trash2,
   Download,
   AlertTriangle,
+  CheckCircle,
   CheckCircle2,
   Key,
   Search,
@@ -51,6 +52,7 @@ import {
   downloadPDF,
 } from "@/lib/pdf-utils";
 import { useSession, signOut } from "next-auth/react";
+import Link from "next/link";
 
 // dnd-kit imports
 import {
@@ -2001,6 +2003,13 @@ export default function OMRDashboard() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/admin"
+              className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all shadow-sm active:scale-95"
+            >
+              <Settings className="w-4 h-4" />
+              Admin Panel
+            </Link>
             <button
               onClick={() => setIsConfigOpen(true)}
               className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-100 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all shadow-sm active:scale-95"
