@@ -139,15 +139,15 @@ export const CLASS_CONFIGS: Record<string, SubjectConfig[]> = {
     '08': [
         {
             ...SUB_AZ_BASE,
-            // 18+2+8+2×5 = 38 chars, 30 sual, 100 bal
-            // Qapalı: 26×3.07692307=80, Yazı: 2×5=10, Açıq: 2×5=10 → 100
-            length: 38,
+            // 18+2+8+2 = 30 chars, 30 sual, 100 bal
+            // Qapalı: 26×3.07692307=80, Yazı: 4×5=20 → 100
+            length: 30,
             points: 100,
             segments: [
                 { type: 'closed', count: 18, points: 3.07692307, lengthPerItem: 1 },
                 { type: 'written', count: 2, points: 5, lengthPerItem: 1 },
                 { type: 'closed', count: 8, points: 3.07692307, lengthPerItem: 1 },
-                { type: 'open', count: 2, points: 5, lengthPerItem: 5 },
+                { type: 'written', count: 2, points: 5, lengthPerItem: 1 },
             ],
         },
         {
@@ -224,11 +224,11 @@ export const BURAXILIS_LAYOUT_11 = [
 
 // Grade 8-9 Specific Layout
 export const BURAXILIS_LAYOUT_9 = [
-    // Az dili: 18 qapalı + 2 yazı + 8 qapalı + 2 açıq = 38 chars
+    // Az dili: 18 qapalı + 2 yazı + 8 qapalı + 2 yazı = 30 chars
     { subject: 'az', type: 'closed', length: 18 },
     { subject: 'az', type: 'written', length: 2 },
     { subject: 'az', type: 'closed', length: 8 },
-    { subject: 'az', type: 'open', count: 2, lengthPerItem: 5 },
+    { subject: 'az', type: 'written', length: 2 },
     // Riyaziyyat: 15 qapalı + 6 açıq + 4 yazı = 49 chars
     { subject: 'math', type: 'closed', length: 15 },
     { subject: 'math', type: 'open', count: 6, lengthPerItem: 5 },
