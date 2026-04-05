@@ -135,23 +135,21 @@ export const CLASS_CONFIGS: Record<string, SubjectConfig[]> = {
         createLegacyConfig(SUB_GEO_BASE, 10, 7),
         createLegacyConfig(SUB_ENG_BASE, 10, 7),
     ],
-    // 8-9cu sinif (Buraxılış İmtahanı)
+    // 8-9cu sinif (Buraxılış İmtahanı default)
     '08': [
         {
             ...SUB_AZ_BASE,
-            // 18×1 + 2×1 + 8×1 + 2×5 = 38 chars, 30 sual
-            length: 38,
+            // 26×1 + 4×1 = 30 chars, 30 sual, 100 bal
+            length: 30,
             points: 100,
             segments: [
-                { type: 'closed', count: 18, points: 3.07692307, lengthPerItem: 1 },
-                { type: 'written', count: 2, points: 5, lengthPerItem: 1 },
-                { type: 'closed', count: 8, points: 3.07692307, lengthPerItem: 1 },
-                { type: 'open', count: 2, points: 5, lengthPerItem: 5 },
+                { type: 'closed', count: 26, points: 3.07692307, lengthPerItem: 1 },
+                { type: 'written', count: 4, points: 5, lengthPerItem: 1 },
             ],
         },
         {
             ...SUB_MATH_BASE,
-            // 15×1 + 6×5 + 4×1 = 49 chars, 25 sual
+            // 15×1 + 6×5 + 4×1 = 49 chars, 25 sual, 100 bal
             length: 49,
             points: 100,
             segments: [
@@ -162,17 +160,13 @@ export const CLASS_CONFIGS: Record<string, SubjectConfig[]> = {
         },
         {
             ...SUB_ENG_BASE,
-            // 3×1 + 1×1 + 7×1 + 1×5 + 12×1 + 1×5 + 1×1 = 34 chars, 26 sual
+            // 22×1 + 2×5 + 2×1 = 34 chars, 26 sual, 100 bal
             length: 34,
             points: 100,
             segments: [
-                { type: 'closed', count: 3, points: 3.75, lengthPerItem: 1 },
-                { type: 'written', count: 1, points: 6.25, lengthPerItem: 1 },
-                { type: 'closed', count: 7, points: 3.75, lengthPerItem: 1 },
-                { type: 'open', count: 1, points: 2.5, lengthPerItem: 5 },
-                { type: 'closed', count: 12, points: 3.75, lengthPerItem: 1 },
-                { type: 'open', count: 1, points: 2.5, lengthPerItem: 5 },
-                { type: 'written', count: 1, points: 6.25, lengthPerItem: 1 },
+                { type: 'closed', count: 22, points: 3.75, lengthPerItem: 1 },
+                { type: 'open', count: 2, points: 2.5, lengthPerItem: 5 },
+                { type: 'written', count: 2, points: 6.25, lengthPerItem: 1 },
             ],
         },
     ],
