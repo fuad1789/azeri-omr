@@ -126,10 +126,11 @@ interface CombinedPDFProps {
   examName: string;
   examDate: string;
   totalStudents: number;
+  conductor?: 'azeri' | 'reduco';
 }
 
 export const CombinedBuraxilisExamResultPDF: React.FC<CombinedPDFProps> = ({
-  students, examName, examDate,
+  students, examName, examDate, conductor = 'azeri',
 }) => {
   const formatDate = (d: string) => {
     try {
@@ -342,7 +343,16 @@ export const CombinedBuraxilisExamResultPDF: React.FC<CombinedPDFProps> = ({
             </View>
           </View>
         </View>
-        <View style={styles.footerStrip} />
+        {/* Footer */}
+        <View style={{ marginTop: 8, paddingTop: 4, borderTopWidth: 1, borderTopColor: "#CCC", textAlign: "center" }}>
+          {conductor === 'reduco' ? (
+            <Text style={{ fontSize: 8, color: "#666" }}>Reduco TM</Text>
+          ) : (
+            <Text style={{ fontSize: 8, color: "#666" }}>
+              ƏLAQƏ NÖMRƏLƏRİMİZ: (018) 656 50 42 MOB: (055) 444-06-62 WhatsApp / MAIL: azerikursu@gmail.com URL: www.azeri.edu.az
+            </Text>
+          )}
+        </View>
       </Page>
     );
   };

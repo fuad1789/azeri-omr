@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       success: true,
       result: {
         examType: exam.examType,
+        conductor: exam.conductor || 'azeri',
         examName: exam.examName,
         examDate: exam.examDate,
         ad: studentResult.ad,

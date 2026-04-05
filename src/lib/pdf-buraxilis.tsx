@@ -300,6 +300,7 @@ interface ExamResultPDFProps {
   examDate: string;
   rank?: number;
   totalStudents?: number;
+  conductor?: 'azeri' | 'reduco';
 }
 
 export const BuraxilisExamResultPDF: React.FC<ExamResultPDFProps> = ({
@@ -308,6 +309,7 @@ export const BuraxilisExamResultPDF: React.FC<ExamResultPDFProps> = ({
   examName,
   examDate,
   rank,
+  conductor = 'azeri',
 }) => {
   const formatDate = (d: string) => {
     try {
@@ -566,7 +568,15 @@ export const BuraxilisExamResultPDF: React.FC<ExamResultPDFProps> = ({
         </View>
 
         {/* Footer */}
-        <View style={styles.footerStrip} />
+        <View style={{ marginTop: 8, paddingTop: 4, borderTopWidth: 1, borderTopColor: "#CCC", textAlign: "center" }}>
+          {conductor === 'reduco' ? (
+            <Text style={{ fontSize: 8, color: "#666" }}>Reduco TM</Text>
+          ) : (
+            <Text style={{ fontSize: 8, color: "#666" }}>
+              ƏLAQƏ NÖMRƏLƏRİMİZ: (018) 656 50 42 MOB: (055) 444-06-62 WhatsApp / MAIL: azerikursu@gmail.com URL: www.azeri.edu.az
+            </Text>
+          )}
+        </View>
       </Page>
     </Document>
   );

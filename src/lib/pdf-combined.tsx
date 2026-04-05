@@ -305,6 +305,7 @@ interface CombinedPDFProps {
   examName: string;
   examDate: string;
   totalStudents: number;
+  conductor?: 'azeri' | 'reduco';
 }
 
 export const CombinedExamResultPDF: React.FC<CombinedPDFProps> = ({
@@ -312,6 +313,7 @@ export const CombinedExamResultPDF: React.FC<CombinedPDFProps> = ({
   examName,
   examDate,
   totalStudents,
+  conductor = 'azeri',
 }) => {
   const formatDate = (dateStr: string) => {
     try {
@@ -632,10 +634,14 @@ export const CombinedExamResultPDF: React.FC<CombinedPDFProps> = ({
 
           {/* Footer */}
           <View style={styles.footer} wrap={false}>
-            <Text>
-              ƏLAQƏ NÖMRƏLƏRİMİZ: (018) 656 50 42 MOB: (055) 444-06-62 WhatsApp
-              / MAIL: azerikursu@gmail.com URL: www.azeri.edu.az
-            </Text>
+            {conductor === 'reduco' ? (
+              <Text>Reduco TM</Text>
+            ) : (
+              <Text>
+                ƏLAQƏ NÖMRƏLƏRİMİZ: (018) 656 50 42 MOB: (055) 444-06-62 WhatsApp
+                / MAIL: azerikursu@gmail.com URL: www.azeri.edu.az
+              </Text>
+            )}
           </View>
         </View>
       </Page>

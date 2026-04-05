@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     const body = await req.json();
-    const { name, description, price, priceDescription, isActive, displayOrder } = body;
+    const { name, description, price, priceDescription, conductor, isActive, displayOrder } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
       description: description || '',
       price: price !== undefined ? price : 0,
       priceDescription: priceDescription || '',
+      conductor: conductor || 'azeri',
       isActive: isActive !== undefined ? isActive : true,
       displayOrder: displayOrder || 0,
     });
@@ -113,13 +114,14 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, description, price, priceDescription, isActive, displayOrder } = body;
+    const { name, description, price, priceDescription, conductor, isActive, displayOrder } = body;
 
     const updateData: Record<string, any> = {};
     if (name) updateData.name = name.trim();
     if (description !== undefined) updateData.description = description;
     if (price !== undefined) updateData.price = price;
     if (priceDescription !== undefined) updateData.priceDescription = priceDescription;
+    if (conductor !== undefined) updateData.conductor = conductor;
     if (isActive !== undefined) updateData.isActive = isActive;
     if (displayOrder !== undefined) updateData.displayOrder = displayOrder;
 

@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     await connectDB();
 
     const body = await req.json();
-    const { examName, examDate, examType, students } = body;
+    const { examName, examDate, examType, conductor, students } = body;
 
     if (!examName || !examDate || !examType || !Array.isArray(students)) {
       return NextResponse.json(
@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
       examName,
       examDate,
       examType,
+      conductor: conductor || 'azeri',
       totalStudents: students.length,
       validStudents: validStudents.length,
       students: studentResults,
@@ -132,12 +133,13 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { examName, examDate, examType } = body;
+    const { examName, examDate, examType, conductor } = body;
 
     const updateData: Record<string, any> = {};
     if (examName) updateData.examName = examName;
     if (examDate) updateData.examDate = examDate;
     if (examType) updateData.examType = examType;
+    if (conductor !== undefined) updateData.conductor = conductor;
 
     const updated = await ExamSession.findByIdAndUpdate(
       id,

@@ -5,6 +5,7 @@ export interface IExamType extends Document {
   description?: string;   // Təsvir (istəyə bağlı)
   price?: number;         // Ödəniş məbləği (AZN) - bir dəfəlik ödəniş
   priceDescription?: string; // Ödəniş təsviri (məs: "Aylıq", "İllik")
+  conductor: "azeri" | "reduco"; // İmtahanı keçirən tərəf
   isActive: boolean;      // Aktivdir?
   displayOrder: number;   // Sıralama
   createdAt: Date;
@@ -30,6 +31,11 @@ const ExamTypeSchema = new Schema<IExamType>(
     priceDescription: {
       type: String,
       default: "",
+    },
+    conductor: {
+      type: String,
+      enum: ["azeri", "reduco"],
+      default: "azeri",
     },
     isActive: { 
       type: Boolean,

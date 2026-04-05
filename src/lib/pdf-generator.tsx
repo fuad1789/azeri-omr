@@ -301,6 +301,7 @@ interface ExamResultPDFProps {
   examName?: string;
   examDate: string;
   examType?: string;
+  conductor?: 'azeri' | 'reduco';
   rank?: number;
   totalStudents?: number;
 }
@@ -311,6 +312,7 @@ export const ExamResultPDF: React.FC<ExamResultPDFProps> = ({
   examName,
   examDate,
   examType,
+  conductor = 'azeri',
   rank,
   totalStudents,
 }) => {
@@ -627,10 +629,14 @@ export const ExamResultPDF: React.FC<ExamResultPDFProps> = ({
 
           {/* Footer */}
           <View style={styles.footer} wrap={false}>
-            <Text>
-              ƏLAQƏ NÖMRƏLƏRİMİZ: (018) 656 50 42 MOB: (055) 444-06-62 WhatsApp
-              / MAIL: azerikursu@gmail.com URL: www.azeri.edu.az
-            </Text>
+            {conductor === 'reduco' ? (
+              <Text>Reduco TM</Text>
+            ) : (
+              <Text>
+                ƏLAQƏ NÖMRƏLƏRİMİZ: (018) 656 50 42 MOB: (055) 444-06-62 WhatsApp
+                / MAIL: azerikursu@gmail.com URL: www.azeri.edu.az
+              </Text>
+            )}
           </View>
         </View>
       </Page>

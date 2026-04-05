@@ -1,16 +1,17 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 // import { pdf } from '@react-pdf/renderer'; // Removed for lazy loading
-import { ExamResultPDF } from './pdf-generator';
-import { GradedStudent } from './grading';
-import { SubjectConfig } from './omr-parser';
+import { ExamResultPDF } from "./pdf-generator";
+import { GradedStudent } from "./grading";
+import { SubjectConfig } from "./omr-parser";
 
 export interface PDFGenerationOptions {
   examName: string;
   examDate: string;
   includeRank?: boolean;
   examType?: 'standard' | 'buraxilis';
+  conductor?: 'azeri' | 'reduco';
 }
 
 /**
@@ -21,13 +22,13 @@ export async function generateStudentPDF(
   config: SubjectConfig[],
   options: PDFGenerationOptions,
   rank?: number,
-  totalStudents?: number
+  totalStudents?: number,
 ): Promise<Blob> {
   // Determine which template to render
   let doc: React.ReactElement;
 
-  if (options.examType === 'buraxilis') {
-    const { BuraxilisExamResultPDF } = await import('./pdf-buraxilis');
+  if (options.examType === "buraxilis") {
+    const { BuraxilisExamResultPDF } = await import("./pdf-buraxilis");
     doc = (
       <BuraxilisExamResultPDF
         student={student}
@@ -36,6 +37,7 @@ export async function generateStudentPDF(
         examDate={options.examDate}
         rank={options.includeRank ? rank : undefined}
         totalStudents={totalStudents}
+        conductor={options.conductor}
       />
     );
   } else {
@@ -46,13 +48,14 @@ export async function generateStudentPDF(
         examName={options.examName}
         examDate={options.examDate}
         examType={options.examType}
+        conductor={options.conductor}
         rank={options.includeRank ? rank : undefined}
         totalStudents={totalStudents}
       />
     );
   }
 
-  const { pdf } = await import('@react-pdf/renderer');
+  const { pdf } = await import("@react-pdf/renderer");
   const asPdf = pdf(doc as any);
   const blob = await asPdf.toBlob();
   return blob;
@@ -64,12 +67,12 @@ export async function generateStudentPDF(
 export async function generateCombinedPDF(
   students: GradedStudent[],
   configMap: Record<string, SubjectConfig[]>,
-  options: PDFGenerationOptions
+  options: PDFGenerationOptions,
 ): Promise<Blob> {
   // Calculate ranks if needed
   const studentsWithScores = students
-    .filter(s => s.isValid && s.scores)
-    .map(s => ({
+    .filter((s) => s.isValid && s.scores)
+    .map((s) => ({
       student: s,
       score: s.scores!.totalNetScore,
     }))
@@ -91,39 +94,42 @@ export async function generateCombinedPDF(
 
   // Prepare student data with configs and ranks
   const studentData = students
-    .filter(s => s.isValid && s.scores)
-    .map(student => ({
+    .filter((s) => s.isValid && s.scores)
+    .map((student) => ({
       student,
-      config: configMap[student.sinif] || configMap['default'] || [],
+      config: configMap[student.sinif] || configMap["default"] || [],
       rank: options.includeRank ? rankMap.get(student.id) : undefined,
     }));
 
   // Generate combined PDF
   let doc: React.ReactElement;
-  
-  if (options.examType === 'buraxilis') {
-    const { CombinedBuraxilisExamResultPDF } = await import('./pdf-buraxilis-combined');
+
+  if (options.examType === "buraxilis") {
+    const { CombinedBuraxilisExamResultPDF } =
+      await import("./pdf-buraxilis-combined");
     doc = (
       <CombinedBuraxilisExamResultPDF
         students={studentData}
         examName={options.examName}
         examDate={options.examDate}
         totalStudents={totalStudents}
+        conductor={options.conductor}
       />
     );
   } else {
-    const { CombinedExamResultPDF } = await import('./pdf-combined');
+    const { CombinedExamResultPDF } = await import("./pdf-combined");
     doc = (
       <CombinedExamResultPDF
         students={studentData}
         examName={options.examName}
         examDate={options.examDate}
         totalStudents={totalStudents}
+        conductor={options.conductor}
       />
     );
   }
 
-  const { pdf } = await import('@react-pdf/renderer');
+  const { pdf } = await import("@react-pdf/renderer");
   const asPdf = pdf(doc as any);
   const blob = await asPdf.toBlob();
   return blob;
@@ -134,7 +140,7 @@ export async function generateCombinedPDF(
  */
 export function downloadPDF(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
   link.download = filename;
   document.body.appendChild(link);
@@ -148,12 +154,11 @@ export function downloadPDF(blob: Blob, filename: string) {
  */
 export async function downloadCombinedPDF(blob: Blob, examName: string) {
   const sanitizedName = examName
-    .replace(/\s+/g, '_')
-    .replace(/[^a-zA-Z0-9_]/g, '')
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9_]/g, "")
     .slice(0, 50);
-  
-  const filename = `imtahan_nəticələri_${sanitizedName}_${new Date().toISOString().split('T')[0]}.pdf`;
-  
+
+  const filename = `imtahan_nəticələri_${sanitizedName}_${new Date().toISOString().split("T")[0]}.pdf`;
+
   downloadPDF(blob, filename);
 }
-
