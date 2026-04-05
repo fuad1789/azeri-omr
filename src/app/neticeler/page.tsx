@@ -16,6 +16,7 @@ interface SubjectScore {
 interface ExamResult {
   examName: string;
   examDate: string;
+  conductor: "azeri" | "reduco";
   ad: string;
   soyad: string;
   ataAdi: string;
@@ -101,6 +102,7 @@ function ResultsContent() {
             examName: result.examName,
             examDate: result.examDate,
             examType: result.examType as 'buraxilis' | 'standard',
+            conductor: result.conductor,
             includeRank: true
         },
         result.rank,
@@ -190,29 +192,56 @@ function ResultsContent() {
   const totalIncorrect = subjectEntries.reduce((sum, [, s]) => sum + s.incorrect, 0);
   const totalUnanswered = subjectEntries.reduce((sum, [, s]) => sum + s.unanswered, 0);
 
+  const isReduco = result.conductor === "reduco";
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sticky top bar */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link
-            href="/#exam-search"
-            className="inline-flex items-center gap-1.5 text-gray-500 hover:text-brand-red transition-colors text-sm font-medium"
-          >
-            <ArrowLeft size={16} />
-            <span className="hidden sm:inline">Geri qayıt</span>
-          </Link>
-          <p className="text-xs text-gray-400 truncate max-w-[200px] sm:max-w-none">{result.examName}</p>
+      {/* Reduco TM Header - only shown for reduco conductor */}
+      {isReduco && (
+        <div className="py-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-black text-gray-900 tracking-widest uppercase">REDUCO</h1>
+          </div>
+        </div>
+      )}
+
+      {/* Sticky top bar - hidden for reduco */}
+      {!isReduco && (
+        <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+          <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+            <Link
+              href="/#exam-search"
+              className="inline-flex items-center gap-1.5 text-gray-500 hover:text-brand-red transition-colors text-sm font-medium"
+            >
+              <ArrowLeft size={16} />
+              <span className="hidden sm:inline">Geri qayıt</span>
+            </Link>
+            <p className="text-xs text-gray-400 truncate max-w-[200px] sm:max-w-none">{result.examName}</p>
+            <button
+              onClick={handleDownloadPDF}
+              disabled={isDownloading}
+              className="inline-flex items-center gap-1.5 bg-brand-red text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-brand-red-dark transition-colors disabled:opacity-50"
+            >
+              {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              <span className="hidden sm:inline">PDF Yüklə</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Download button for Reduco - shown below header */}
+      {isReduco && (
+        <div className="max-w-3xl mx-auto px-4 py-3 flex justify-end">
           <button
             onClick={handleDownloadPDF}
             disabled={isDownloading}
-            className="inline-flex items-center gap-1.5 bg-brand-red text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-brand-red-dark transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 bg-brand-red text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-red-dark transition-colors disabled:opacity-50"
           >
             {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            <span className="hidden sm:inline">PDF Yüklə</span>
+            <span>PDF Yüklə</span>
           </button>
         </div>
-      </div>
+      )}
 
       <div className="max-w-3xl mx-auto px-4 py-5 sm:py-8">
 

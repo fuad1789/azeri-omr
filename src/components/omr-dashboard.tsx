@@ -1394,6 +1394,7 @@ export default function OMRDashboard() {
   const [examDate, setExamDate] = useState<string>(
     new Date().toISOString().split("T")[0],
   );
+  const [conductor, setConductor] = useState<"azeri" | "reduco">("azeri");
   const [isGeneratingPDFs, setIsGeneratingPDFs] = useState(false);
   const [includeRank, setIncludeRank] = useState(true);
   const [isSavingToDB, setIsSavingToDB] = useState(false);
@@ -1657,6 +1658,7 @@ export default function OMRDashboard() {
         examDate: examDate,
         includeRank: includeRank,
         examType: examType,
+        conductor: conductor,
       });
 
       await downloadCombinedPDF(combinedBlob, examName.trim());
@@ -1721,6 +1723,7 @@ export default function OMRDashboard() {
           examDate: examDate,
           includeRank: includeRank,
           examType: examType,
+          conductor: conductor,
         },
         rank,
         gradedData?.filter((s) => s.isValid && s.scores).length,
@@ -1759,6 +1762,7 @@ export default function OMRDashboard() {
           examName: examName.trim(),
           examDate,
           examType,
+          conductor,
           // Strip large raw-data fields that are not needed for DB storage
           students: gradedData.map(({ originalLine: _ol, subjects: _subj, fullAnswerString: _fas, ...rest }) => rest),
         }),
@@ -2690,8 +2694,21 @@ export default function OMRDashboard() {
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-3 pt-6 md:pt-0">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                <div className="flex items-center gap-4 pt-6 md:pt-0">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
+                      Keçirən
+                    </label>
+                    <select
+                      value={conductor}
+                      onChange={(e) => setConductor(e.target.value as "azeri" | "reduco")}
+                      className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+                    >
+                      <option value="azeri">Azeri</option>
+                      <option value="reduco">Reduco</option>
+                    </select>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer mt-5">
                     <input
                       type="checkbox"
                       checked={includeRank}
