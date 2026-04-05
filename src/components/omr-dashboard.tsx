@@ -129,6 +129,8 @@ const SubjectRow = React.memo(
     index,
     handleUpdateSubject,
     handleSegmentConfigUpdate,
+    handleAddSegment,
+    handleRemoveSegment,
     handleRemoveSubject,
     dragListeners,
   }: {
@@ -143,8 +145,10 @@ const SubjectRow = React.memo(
       subjectIdx: number,
       segmentIdx: number,
       field: keyof SubjectSegment,
-      val: number,
+      val: number | string,
     ) => void;
+    handleAddSegment: (subjectIdx: number, type: 'closed' | 'open' | 'written') => void;
+    handleRemoveSegment: (subjectIdx: number, segmentIdx: number) => void;
     handleRemoveSubject: (idx: number) => void;
     dragListeners?: any;
   }) => {
@@ -235,24 +239,32 @@ const SubjectRow = React.memo(
         {/* Expanded Segment Editor */}
         {isExpanded && subject.segments && (
           <div className="bg-slate-50 p-4 border-t border-slate-100 grid gap-3 animate-in slide-in-from-top-2 duration-200">
-            <div className="grid grid-cols-12 gap-2 text-[10px] uppercase font-bold text-slate-400 px-2">
-              <div className="col-span-4">Sual Tipi</div>
-              <div className="col-span-4 text-center">Sual Sayı</div>
-              <div className="col-span-4 text-center">1 Sualın Balı</div>
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 text-[10px] uppercase font-bold text-slate-400 px-2">
+              <div>Sual Tipi</div>
+              <div className="text-center w-16">Sual Sayı</div>
+              <div className="text-center w-16">1 Sualın Balı</div>
+              <div className="w-8"></div>
             </div>
             {subject.segments.map((seg, i) => (
               <div
                 key={i}
-                className="grid grid-cols-12 gap-2 items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm"
+                className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm"
               >
-                <div className="col-span-4 text-xs font-semibold text-slate-700 px-2 capitalize">
-                  {seg.type === "closed"
-                    ? "Qapalı"
-                    : seg.type === "open"
-                      ? "Açıq"
-                      : "Yazı"}
+                <div className="flex items-center gap-2 px-2">
+                  <span className="text-[10px] font-bold text-slate-400 min-w-[16px]">{i + 1}.</span>
+                  <select
+                    value={seg.type}
+                    onChange={(e) =>
+                      handleSegmentConfigUpdate(index, i, "type", e.target.value)
+                    }
+                    className="text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded px-2 py-1 focus:border-indigo-500 outline-none cursor-pointer"
+                  >
+                    <option value="closed">Qapalı</option>
+                    <option value="open">Açıq</option>
+                    <option value="written">Yazı</option>
+                  </select>
                 </div>
-                <div className="col-span-4 flex justify-center">
+                <div className="flex justify-center">
                   <input
                     type="number"
                     min={0}
@@ -268,13 +280,12 @@ const SubjectRow = React.memo(
                     className="w-16 px-2 py-1 text-center border border-slate-200 rounded text-sm focus:border-indigo-500 outline-none"
                   />
                 </div>
-                <div className="col-span-4 flex justify-center">
+                <div className="flex justify-center">
                   <input
                     type="number"
                     min={0}
                     step={0.1}
                     value={seg.points}
-                    disabled={seg.type === "written"} // Disable for Written
                     onChange={(e) =>
                       handleSegmentConfigUpdate(
                         index,
@@ -283,16 +294,48 @@ const SubjectRow = React.memo(
                         parseFloat(e.target.value) || 0,
                       )
                     }
-                    className={cn(
-                      "w-16 px-2 py-1 text-center border border-slate-200 rounded text-sm focus:border-indigo-500 outline-none font-mono text-indigo-600",
-                      seg.type === "written" &&
-                        "bg-slate-100 text-slate-400 cursor-not-allowed",
-                    )}
+                    className="w-16 px-2 py-1 text-center border border-slate-200 rounded text-sm focus:border-indigo-500 outline-none font-mono text-indigo-600"
                   />
                 </div>
+                <button
+                  onClick={() => handleRemoveSegment(index, i)}
+                  disabled={subject.segments!.length <= 1}
+                  className={cn(
+                    "w-8 h-8 flex items-center justify-center rounded-lg transition-colors",
+                    subject.segments!.length <= 1
+                      ? "text-slate-200 cursor-not-allowed"
+                      : "text-slate-400 hover:text-red-500 hover:bg-red-50",
+                  )}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
             ))}
-            <div className="text-center text-xs text-slate-400 mt-2 font-medium">
+            {/* Add Segment Buttons */}
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                onClick={() => handleAddSegment(index, 'closed')}
+                className="flex-1 py-1.5 border border-dashed border-slate-300 rounded-lg text-xs text-slate-500 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all font-medium flex items-center justify-center gap-1"
+              >
+                <Plus className="w-3 h-3" />
+                Qapalı
+              </button>
+              <button
+                onClick={() => handleAddSegment(index, 'open')}
+                className="flex-1 py-1.5 border border-dashed border-slate-300 rounded-lg text-xs text-slate-500 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all font-medium flex items-center justify-center gap-1"
+              >
+                <Plus className="w-3 h-3" />
+                Açıq
+              </button>
+              <button
+                onClick={() => handleAddSegment(index, 'written')}
+                className="flex-1 py-1.5 border border-dashed border-slate-300 rounded-lg text-xs text-slate-500 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all font-medium flex items-center justify-center gap-1"
+              >
+                <Plus className="w-3 h-3" />
+                Yazı
+              </button>
+            </div>
+            <div className="text-center text-xs text-slate-400 mt-1 font-medium">
               Toplam Sual:{" "}
               {subject.segments.reduce((acc, s) => acc + s.count, 0)} | Təxmini
               Toplam Bal:{" "}
@@ -1838,7 +1881,7 @@ export default function OMRDashboard() {
       subjectIndex: number,
       segmentIndex: number,
       field: keyof SubjectSegment,
-      value: number,
+      value: number | string,
     ) => {
       setConfigMap((prev) => {
         const newMap = { ...prev };
@@ -1848,10 +1891,26 @@ export default function OMRDashboard() {
 
         const newSegments = [...(oldSubject.segments || [])];
 
-        newSegments[segmentIndex] = {
-          ...newSegments[segmentIndex],
-          [field]: value,
-        };
+        if (field === 'type') {
+          const newType = value as 'closed' | 'open' | 'written';
+          newSegments[segmentIndex] = {
+            ...newSegments[segmentIndex],
+            type: newType,
+            lengthPerItem: newType === 'open' ? 5 : 1,
+          };
+        } else if (field === 'points' && newSegments[segmentIndex].type === 'written') {
+          // When changing written segment points, apply to ALL written segments in this subject
+          for (let si = 0; si < newSegments.length; si++) {
+            if (newSegments[si].type === 'written') {
+              newSegments[si] = { ...newSegments[si], points: value as number };
+            }
+          }
+        } else {
+          newSegments[segmentIndex] = {
+            ...newSegments[segmentIndex],
+            [field]: value,
+          };
+        }
 
         const newTotalLength = newSegments.reduce(
           (acc, s) => acc + s.count * s.lengthPerItem,
@@ -1919,16 +1978,122 @@ export default function OMRDashboard() {
     [configActiveTab, answerKeys],
   );
 
+  const handleAddSegment = useCallback(
+    (subjectIndex: number, type: 'closed' | 'open' | 'written') => {
+      setConfigMap((prev) => {
+        const newMap = { ...prev };
+        const currentConfig = [...(newMap[configActiveTab] || [])];
+        const oldSubject = currentConfig[subjectIndex];
+
+        const newSegment: SubjectSegment = {
+          type,
+          count: type === 'written' ? 2 : 5,
+          points: type === 'written' ? 0 : (oldSubject.segments?.[0]?.points || 1),
+          lengthPerItem: type === 'open' ? 5 : 1,
+        };
+
+        const newSegments = [...(oldSubject.segments || []), newSegment];
+        const newTotalLength = newSegments.reduce(
+          (acc, s) => acc + s.count * s.lengthPerItem,
+          0,
+        );
+        const newTotalPoints = newSegments.reduce(
+          (acc, s) => acc + s.count * s.points,
+          0,
+        );
+
+        currentConfig[subjectIndex] = {
+          ...oldSubject,
+          segments: newSegments,
+          length: newTotalLength,
+          points: Number(newTotalPoints.toFixed(1)),
+        };
+
+        newMap[configActiveTab] = currentConfig;
+        return newMap;
+      });
+    },
+    [configActiveTab],
+  );
+
+  const handleRemoveSegment = useCallback(
+    (subjectIndex: number, segmentIndex: number) => {
+      setConfigMap((prev) => {
+        const newMap = { ...prev };
+        const currentConfig = [...(newMap[configActiveTab] || [])];
+        const oldSubject = currentConfig[subjectIndex];
+        const oldSegments = oldSubject.segments || [];
+
+        if (oldSegments.length <= 1) return prev;
+
+        const oldLength = oldSubject.length || 0;
+        const newSegments = oldSegments.filter((_, i) => i !== segmentIndex);
+        const newTotalLength = newSegments.reduce(
+          (acc, s) => acc + s.count * s.lengthPerItem,
+          0,
+        );
+        const newTotalPoints = newSegments.reduce(
+          (acc, s) => acc + s.count * s.points,
+          0,
+        );
+
+        currentConfig[subjectIndex] = {
+          ...oldSubject,
+          segments: newSegments,
+          length: newTotalLength,
+          points: Number(newTotalPoints.toFixed(1)),
+        };
+
+        newMap[configActiveTab] = currentConfig;
+
+        // Sync answer keys on length change
+        if (newTotalLength !== oldLength) {
+          const classKeys = answerKeys[configActiveTab];
+          if (classKeys) {
+            const newKeys = { ...classKeys };
+            Object.keys(newKeys).forEach((variant) => {
+              let key = newKeys[variant] || "";
+              let subjectStart = 0;
+              for (let i = 0; i < subjectIndex; i++) {
+                subjectStart += currentConfig[i].length || 0;
+              }
+              const beforeSubject = key.slice(0, subjectStart);
+              const subjectPart = key.slice(subjectStart, subjectStart + oldLength);
+              const afterSubject = key.slice(subjectStart + oldLength);
+              let newSubjectPart = subjectPart;
+              if (newTotalLength > oldLength) {
+                newSubjectPart = subjectPart.padEnd(newTotalLength, " ");
+              } else {
+                newSubjectPart = subjectPart.slice(0, newTotalLength);
+              }
+              newKeys[variant] = beforeSubject + newSubjectPart + afterSubject;
+            });
+            setAnswerKeys((prevKeys) => ({
+              ...prevKeys,
+              [configActiveTab]: newKeys,
+            }));
+          }
+        }
+
+        return newMap;
+      });
+    },
+    [configActiveTab, answerKeys],
+  );
+
   const handleAddSubject = () => {
     setConfigMap((prev) => {
       const newMap = { ...prev };
       const currentConfig = [...(newMap[configActiveTab] || [])];
-      const newSubject = {
+      const newSubject: SubjectConfig = {
         id: `subject-${Date.now()}`,
         name: "Yeni Fənn",
         length: 10,
         points: 5,
         color: "bg-slate-100 text-slate-900",
+        segments: [
+          { type: 'closed', count: 10, points: 0.5, lengthPerItem: 1 },
+        ],
       };
       newMap[configActiveTab] = [...currentConfig, newSubject];
       return newMap;
@@ -2420,6 +2585,8 @@ export default function OMRDashboard() {
                                       handleSegmentConfigUpdate={
                                         handleSegmentConfigUpdate
                                       }
+                                      handleAddSegment={handleAddSegment}
+                                      handleRemoveSegment={handleRemoveSegment}
                                       handleRemoveSubject={handleRemoveSubject}
                                     />
                                   </SortableSubjectItem>

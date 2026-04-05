@@ -134,7 +134,8 @@ export const gradeStudent = (
             let weight = pointValue;
             if (openWeights?.[subject.id]?.[globalOpenIndex] !== undefined) {
               weight = openWeights[subject.id][globalOpenIndex];
-            } else if (derivedOpenWeight > 0) {
+            } else if (pointValue <= 0 && derivedOpenWeight > 0) {
+              // Fallback to derived weight only when segment points not explicitly set
               weight = derivedOpenWeight;
             }
             if ((!openWeights || !openWeights[subject.id]) && kChunk && kChunk.trim().length > 0) {
