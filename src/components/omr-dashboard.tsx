@@ -1535,15 +1535,19 @@ export default function OMRDashboard() {
               ? openWeights[student.sinif]
               : undefined;
 
-            // Always re-extract subjects from the original line using the
-            // CURRENT headerConfig and configMap. `student.subjects` was built
-            // at parse time and becomes stale if the user edits config/lengths.
-            const freshSubjects = extractSubjectsFromLine(
-              student.originalLine,
-              headerConfig,
-              config
-            );
-            const freshStudent = { ...student, subjects: freshSubjects };
+            // For standard/legacy mode, re-extract subjects from the original line using
+            // CURRENT headerConfig and configMap (subjects are sequential in raw data).
+            // For buraxilis mode, subjects are interleaved in raw data per layout, so
+            // use the already-parsed student.subjects which were extracted via the layout.
+            let freshStudent = student;
+            if (examType !== "buraxilis") {
+              const freshSubjects = extractSubjectsFromLine(
+                student.originalLine,
+                headerConfig,
+                config
+              );
+              freshStudent = { ...student, subjects: freshSubjects };
+            }
 
             return gradeStudent(freshStudent, key || "", config, classWeights);
           });

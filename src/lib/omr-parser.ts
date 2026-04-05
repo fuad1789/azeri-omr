@@ -474,8 +474,8 @@ export const parseOMRData = (rawText: string, configMap: Record<string, SubjectC
             sinfinAdi: student.sinfinAdi!,
             cins: student.cins!,
             qrup: student.qrup!,
-            fullAnswerString: sequentialAnswerString, 
-            subjects,
+            fullAnswerString: sequentialAnswerString,
+            subjects: mappedSubjects,
             isValid: true
         };
       }
