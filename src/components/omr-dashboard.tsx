@@ -1180,18 +1180,23 @@ const TableRow = React.memo(
             ? (item.scores[subject.id] as SubjectScore)
             : null;
 
-          // Find actual config for this student's class to get segments
+          // Use segments from grading result to ensure display matches grading
           const studentSubjectConfig = config.find((s) => s.id === subject.id);
-          const segments = studentSubjectConfig?.segments || [
+          const segments = score?.segments || studentSubjectConfig?.segments || [
             {
-              type: "closed",
+              type: "closed" as const,
               count: subject.length || 0,
               points: 0,
               lengthPerItem: 1,
             },
           ];
 
-          const width = Math.max(120, (subject.length || 10) * 12);
+          const subjectLen = studentSubjectConfig
+            ? (studentSubjectConfig.segments
+              ? studentSubjectConfig.segments.reduce((acc, s) => acc + s.count * s.lengthPerItem, 0)
+              : studentSubjectConfig.length || 0)
+            : (subject.length || 10);
+          const width = Math.max(120, subjectLen * 12);
 
           return (
             <td
@@ -2140,7 +2145,10 @@ export default function OMRDashboard() {
     const allSubjects = new Map<string, SubjectConfig>();
     Object.values(configMap).forEach((configs) => {
       configs.forEach((subj) => {
-        if (!allSubjects.has(subj.id)) {
+        const existing = allSubjects.get(subj.id);
+        // Prefer configs with segments over legacy, and prefer longer/more detailed ones
+        if (!existing || (subj.segments && !existing.segments) ||
+            (subj.segments && existing.segments && subj.segments.length > existing.segments.length)) {
           allSubjects.set(subj.id, subj);
         }
       });
@@ -3052,9 +3060,12 @@ export default function OMRDashboard() {
                     { w: 50 },
                     { w: 100 },
                   ];
-                  const subjCols = allUniqueSubjects.map((s) => ({
-                    w: Math.max(100, (s.length || 10) * 15),
-                  }));
+                  const subjCols = allUniqueSubjects.map((s) => {
+                    const len = s.segments
+                      ? s.segments.reduce((acc, seg) => acc + seg.count * seg.lengthPerItem, 0)
+                      : (s.length || 10);
+                    return { w: Math.max(100, len * 15) };
+                  });
                   const totalW =
                     fixedCols.reduce((a, c) => a + c.w, 0) +
                     subjCols.reduce((a, c) => a + c.w, 0);

@@ -8,6 +8,7 @@ export interface SubjectScore {
   netScore: number;
   studentAnswerString: string;
   correctAnswerString: string;
+  segments?: SubjectSegment[];
 }
 
 export interface GradedStudent extends ParsedStudent {
@@ -158,6 +159,7 @@ export const gradeStudent = (
       netScore: subjectNetScore,
       studentAnswerString: studentSubjectStr.trimEnd(),
       correctAnswerString: keySubjectStr.trimEnd(),
+      segments,
     };
     totalNetScore += subjectNetScore;
   }
