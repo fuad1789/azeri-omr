@@ -224,14 +224,23 @@ export const BURAXILIS_LAYOUT_11 = [
 
 // Grade 8-9 Specific Layout
 export const BURAXILIS_LAYOUT_9 = [
-    { subject: 'az', type: 'closed', length: 26 },
+    // Az dili: 18 qapalı + 2 yazı + 8 qapalı + 2 açıq = 38 chars
+    { subject: 'az', type: 'closed', length: 18 },
+    { subject: 'az', type: 'written', length: 2 },
+    { subject: 'az', type: 'closed', length: 8 },
+    { subject: 'az', type: 'open', count: 2, lengthPerItem: 5 },
+    // Riyaziyyat: 15 qapalı + 6 açıq + 4 yazı = 49 chars
     { subject: 'math', type: 'closed', length: 15 },
-    { subject: 'eng', type: 'closed', length: 22 },
     { subject: 'math', type: 'open', count: 6, lengthPerItem: 5 },
-    { subject: 'eng', type: 'open', count: 2, lengthPerItem: 5 },
-    { subject: 'az', type: 'written', length: 4 },
     { subject: 'math', type: 'written', length: 4 },
-    { subject: 'eng', type: 'written', length: 2 }
+    // Xarici dil: 3 qapalı + 1 yazı + 7 qapalı + 1 açıq + 12 qapalı + 1 açıq + 1 yazı = 34 chars
+    { subject: 'eng', type: 'closed', length: 3 },
+    { subject: 'eng', type: 'written', length: 1 },
+    { subject: 'eng', type: 'closed', length: 7 },
+    { subject: 'eng', type: 'open', count: 1, lengthPerItem: 5 },
+    { subject: 'eng', type: 'closed', length: 12 },
+    { subject: 'eng', type: 'open', count: 1, lengthPerItem: 5 },
+    { subject: 'eng', type: 'written', length: 1 },
 ];
 
 export const getBuraxilisLayout = (grade: string) => {
@@ -257,8 +266,9 @@ const createBuraxilisConfig = (grade: '9' | '10' | '11'): SubjectConfig[] => {
                  if (l.type === 'closed' || l.type === 'open') points = (grade === '9') ? 3.57142857 : 3.125;
                  if (l.type === 'written') points = 6.25;
              } else if (l.subject === 'eng') {
-                 if (l.type === 'closed' || l.type === 'open') points = (grade === '9' || grade === '10') ? 3.75 : 2.70250969;
-                 if (l.type === 'written') points = (grade === '9' || grade === '10') ? 5 : 5.40571428;
+                 if (l.type === 'closed') points = (grade === '9' || grade === '10') ? 3.75 : 2.70250969;
+                 if (l.type === 'open') points = (grade === '9' || grade === '10') ? 2.5 : 2.70250969;
+                 if (l.type === 'written') points = (grade === '9' || grade === '10') ? 6.25 : 5.40571428;
              }
 
              segs.push({
@@ -279,10 +289,12 @@ const createBuraxilisConfig = (grade: '9' | '10' | '11'): SubjectConfig[] => {
     // All grades (9, 10, 11) currently share the same structure for Buraxilis
     // The points might differ, but the segment counts and types are consistent.
     // The points are defined in the SEG_ constants.
+    // Compute lengths from segments
+    const calcLen = (segs: SubjectSegment[]) => segs.reduce((acc, s) => acc + s.count * s.lengthPerItem, 0);
     return [
-        { ...SUB_AZ_BASE, length: 30, points: 100, segments: SEG_AZ },
-        { ...SUB_MATH_BASE, length: 45, points: 100, segments: SEG_MATH },
-        { ...SUB_ENG_BASE, length: 34, points: 100, segments: SEG_ENG },
+        { ...SUB_AZ_BASE, length: calcLen(SEG_AZ), points: 100, segments: SEG_AZ },
+        { ...SUB_MATH_BASE, length: calcLen(SEG_MATH), points: 100, segments: SEG_MATH },
+        { ...SUB_ENG_BASE, length: calcLen(SEG_ENG), points: 100, segments: SEG_ENG },
     ];
 };
 
