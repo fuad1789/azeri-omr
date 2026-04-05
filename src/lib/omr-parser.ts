@@ -124,7 +124,7 @@ export const CLASS_CONFIGS: Record<string, SubjectConfig[]> = {
         createLegacyConfig(SUB_GEO_BASE, 10, 9),
         createLegacyConfig(SUB_ENG_BASE, 10, 9),
     ],
-    // 7-8ci sinif (Legacy Fənn İmtahanı)
+    // 7ci sinif (Legacy Fənn İmtahanı)
     '07': [
         createLegacyConfig(SUB_AZ_BASE, 20, 7),
         createLegacyConfig(SUB_MATH_BASE, 20, 7),
@@ -135,12 +135,53 @@ export const CLASS_CONFIGS: Record<string, SubjectConfig[]> = {
         createLegacyConfig(SUB_GEO_BASE, 10, 7),
         createLegacyConfig(SUB_ENG_BASE, 10, 7),
     ],
+    // 8-9cu sinif (Buraxılış İmtahanı)
+    '08': [
+        {
+            ...SUB_AZ_BASE,
+            // 18×1 + 2×1 + 8×1 + 2×5 = 38 chars, 30 sual
+            length: 38,
+            points: 100,
+            segments: [
+                { type: 'closed', count: 18, points: 3.07692307, lengthPerItem: 1 },
+                { type: 'written', count: 2, points: 5, lengthPerItem: 1 },
+                { type: 'closed', count: 8, points: 3.07692307, lengthPerItem: 1 },
+                { type: 'open', count: 2, points: 5, lengthPerItem: 5 },
+            ],
+        },
+        {
+            ...SUB_MATH_BASE,
+            // 15×1 + 6×5 + 4×1 = 49 chars, 25 sual
+            length: 49,
+            points: 100,
+            segments: [
+                { type: 'closed', count: 15, points: 3.57142857, lengthPerItem: 1 },
+                { type: 'open', count: 6, points: 3.57142857, lengthPerItem: 5 },
+                { type: 'written', count: 4, points: 6.25, lengthPerItem: 1 },
+            ],
+        },
+        {
+            ...SUB_ENG_BASE,
+            // 3×1 + 1×1 + 7×1 + 1×5 + 12×1 + 1×5 + 1×1 = 34 chars, 26 sual
+            length: 34,
+            points: 100,
+            segments: [
+                { type: 'closed', count: 3, points: 3.75, lengthPerItem: 1 },
+                { type: 'written', count: 1, points: 6.25, lengthPerItem: 1 },
+                { type: 'closed', count: 7, points: 3.75, lengthPerItem: 1 },
+                { type: 'open', count: 1, points: 2.5, lengthPerItem: 5 },
+                { type: 'closed', count: 12, points: 3.75, lengthPerItem: 1 },
+                { type: 'open', count: 1, points: 2.5, lengthPerItem: 5 },
+                { type: 'written', count: 1, points: 6.25, lengthPerItem: 1 },
+            ],
+        },
+    ],
 };
 
 // Copy references
 CLASS_CONFIGS['03'] = CLASS_CONFIGS['02'];
 CLASS_CONFIGS['04'] = CLASS_CONFIGS['02'];
-CLASS_CONFIGS['08'] = CLASS_CONFIGS['07']; // Default 8 is same as 7 for Fənn
+CLASS_CONFIGS['09'] = CLASS_CONFIGS['08']; // 9cu sinif = 8ci sinif
 
 // Single digit support
 CLASS_CONFIGS['1'] = CLASS_CONFIGS['01'];
@@ -151,6 +192,7 @@ CLASS_CONFIGS['5'] = CLASS_CONFIGS['05'];
 CLASS_CONFIGS['6'] = CLASS_CONFIGS['06'];
 CLASS_CONFIGS['7'] = CLASS_CONFIGS['07'];
 CLASS_CONFIGS['8'] = CLASS_CONFIGS['08'];
+CLASS_CONFIGS['9'] = CLASS_CONFIGS['09'];
 
 // --- BURAXILIS IMTAHANI CONFIGURATIONS ---
 

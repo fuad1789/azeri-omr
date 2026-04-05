@@ -242,7 +242,7 @@ const SubjectRow = React.memo(
             <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 text-[10px] uppercase font-bold text-slate-400 px-2">
               <div>Sual Tipi</div>
               <div className="text-center w-16">Sual Sayı</div>
-              <div className="text-center w-16">1 Sualın Balı</div>
+              <div className="text-center w-24">1 Sualın Balı</div>
               <div className="w-8"></div>
             </div>
             {subject.segments.map((seg, i) => (
@@ -294,7 +294,7 @@ const SubjectRow = React.memo(
                         parseFloat(e.target.value) || 0,
                       )
                     }
-                    className="w-16 px-2 py-1 text-center border border-slate-200 rounded text-sm focus:border-indigo-500 outline-none font-mono text-indigo-600"
+                    className="w-24 px-2 py-1 text-center border border-slate-200 rounded text-sm focus:border-indigo-500 outline-none font-mono text-indigo-600"
                   />
                 </div>
                 <button
