@@ -223,24 +223,18 @@ export const BURAXILIS_LAYOUT_11 = [
 ];
 
 // Grade 8-9 Specific Layout
+// Physical byte order on the OMR scanner output — DO NOT change unless the
+// scanner hardware/format changes.  Segments in BURAXILIS_CONFIGS (below)
+// define the *exam-paper* question ordering for display & grading.
 export const BURAXILIS_LAYOUT_9 = [
-    // Az dili: 18 qapalı + 2 yazı + 8 qapalı + 2 yazı = 30 chars
-    { subject: 'az', type: 'closed', length: 18 },
-    { subject: 'az', type: 'written', length: 2 },
-    { subject: 'az', type: 'closed', length: 8 },
-    { subject: 'az', type: 'written', length: 2 },
-    // Riyaziyyat: 15 qapalı + 6 açıq + 4 yazı = 49 chars
+    { subject: 'az', type: 'closed', length: 26 },
     { subject: 'math', type: 'closed', length: 15 },
+    { subject: 'eng', type: 'closed', length: 22 },
     { subject: 'math', type: 'open', count: 6, lengthPerItem: 5 },
+    { subject: 'eng', type: 'open', count: 2, lengthPerItem: 5 },
+    { subject: 'az', type: 'written', length: 4 },
     { subject: 'math', type: 'written', length: 4 },
-    // Xarici dil: 3 qapalı + 1 yazı + 7 qapalı + 1 açıq + 12 qapalı + 1 açıq + 1 yazı = 34 chars
-    { subject: 'eng', type: 'closed', length: 3 },
-    { subject: 'eng', type: 'written', length: 1 },
-    { subject: 'eng', type: 'closed', length: 7 },
-    { subject: 'eng', type: 'open', count: 1, lengthPerItem: 5 },
-    { subject: 'eng', type: 'closed', length: 12 },
-    { subject: 'eng', type: 'open', count: 1, lengthPerItem: 5 },
-    { subject: 'eng', type: 'written', length: 1 },
+    { subject: 'eng', type: 'written', length: 2 }
 ];
 
 export const getBuraxilisLayout = (grade: string) => {
@@ -266,9 +260,8 @@ const createBuraxilisConfig = (grade: '9' | '10' | '11'): SubjectConfig[] => {
                  if (l.type === 'closed' || l.type === 'open') points = (grade === '9') ? 3.57142857 : 3.125;
                  if (l.type === 'written') points = 6.25;
              } else if (l.subject === 'eng') {
-                 if (l.type === 'closed') points = (grade === '9' || grade === '10') ? 3.75 : 2.70250969;
-                 if (l.type === 'open') points = (grade === '9' || grade === '10') ? 2.5 : 2.70250969;
-                 if (l.type === 'written') points = (grade === '9' || grade === '10') ? 6.25 : 5.40571428;
+                 if (l.type === 'closed' || l.type === 'open') points = (grade === '9' || grade === '10') ? 3.75 : 2.70250969;
+                 if (l.type === 'written') points = (grade === '9' || grade === '10') ? 5 : 5.40571428;
              }
 
              segs.push({
