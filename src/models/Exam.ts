@@ -44,6 +44,7 @@ export interface IExamSession extends Document {
   examDate: string;           // İmtahan tarixi (YYYY-MM-DD)
   examType: 'standard' | 'buraxilis'; // İmtahan tipi
   conductor: 'azeri' | 'reduco'; // İmtahanı keçirən tərəf
+  maxScore?: number;             // Ballıq sistemi: 300 / 400 / 700
   totalStudents: number;
   validStudents: number;
   students: IStudentResult[];
@@ -97,6 +98,7 @@ const ExamSessionSchema = new Schema<IExamSession>(
     examDate:      { type: String, required: true },
     examType:      { type: String, enum: ['standard', 'buraxilis'], required: true },
     conductor:     { type: String, enum: ['azeri', 'reduco'], default: 'azeri' },
+    maxScore:      { type: Number },
     totalStudents: { type: Number, default: 0 },
     validStudents: { type: Number, default: 0 },
     students:      { type: [StudentResultSchema], default: [] },

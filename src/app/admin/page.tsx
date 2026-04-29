@@ -18,7 +18,8 @@ import {
   Newspaper,
   Award,
   ClipboardList,
-  MapPin
+  MapPin,
+  Upload
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -141,6 +142,14 @@ export default function AdminDashboard() {
             icon={<FileText className="w-6 h-6 text-indigo-600" />}
             href="/admin/omr"
             color="bg-indigo-600"
+          />
+
+          <DashboardCard
+            title="Hazır nəticə yüklə"
+            description="Xaricdə yoxlanılmış TSV faylını sistemə əlavə edin"
+            icon={<Upload className="w-6 h-6 text-fuchsia-600" />}
+            href="/admin/results-import"
+            color="bg-fuchsia-600"
           />
           
           <DashboardCard

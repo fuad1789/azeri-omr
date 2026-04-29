@@ -49,7 +49,9 @@ export async function POST(req: NextRequest) {
     // Calculate total possible score based on examType + conductor (UI context only)
     // Reduco buraxilis uses subject-coefficient scoring (700); azeri buraxilis and standard exams use net scoring (300)
     const conductor = exam.conductor || 'azeri';
-    const maxScore = exam.examType === 'buraxilis' && conductor === 'reduco' ? 700 : 300;
+    const maxScore = (exam as any).maxScore && Number((exam as any).maxScore) > 0
+      ? Number((exam as any).maxScore)
+      : (exam.examType === 'buraxilis' && conductor === 'reduco' ? 700 : 300);
 
     // Return the specific student data
     return NextResponse.json({
