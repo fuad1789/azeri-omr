@@ -264,12 +264,12 @@ export default function ContactPage() {
                       WhatsApp
                     </h3>
                     <a
-                      href="https://wa.me/994501234567"
+                      href="https://wa.me/994554440662"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-green-600 hover:underline font-medium"
                     >
-                      +994 50 123 45 67
+                      +994 55 444 06 62
                     </a>
                     <p className="text-sm text-gray-500 mt-1">
                       Bizimlə WhatsApp üzərindən əlaqə saxlayın
