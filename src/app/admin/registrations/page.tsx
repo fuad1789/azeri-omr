@@ -974,10 +974,16 @@ export default function RegistrationsPage() {
                                   {reg.fullName}
                                 </p>
                                 <div className="flex items-center gap-3 mt-1">
-                                  <span className="flex items-center gap-1 text-sm text-gray-500">
+                                  <a
+                                    href={whatsappLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-green-600 transition-colors"
+                                  >
                                     <Phone className="w-3 h-3" />
                                     {reg.phone}
-                                  </span>
+                                  </a>
                                   {reg.email && (
                                     <span className="flex items-center gap-1 text-sm text-gray-500">
                                       <Mail className="w-3 h-3" />
