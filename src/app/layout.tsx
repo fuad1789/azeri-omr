@@ -10,6 +10,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: 'Azəri Hazırlıq Kursları - Universitet hazırlıq mərkəzi',
   description: 'Azəri Hazırlıq Kursları - Universitet qəbul imtahanlarına hazırlıq, attestat və sınaq imtahanları, təkmilləşdirmə kursları',
+  icons: {
+    icon: '/images/logo.png',
+    shortcut: '/images/logo.png',
+    apple: '/images/logo.png',
+  },
 };
 
 export default function RootLayout({
